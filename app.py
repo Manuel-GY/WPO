@@ -1,12 +1,9 @@
 import os
-import io
 import sys
-import base64
 import uuid
 from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session
-import qrcode
 import requests
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -59,19 +56,6 @@ def home():
     return redirect(url_for("dashboard"))
 
 
-@app.route("/qr")
-def qr():
-    base_url = request.url_root.rstrip("/")
-    qr_url = f"{base_url}/inspeccion"
-    qr_img = qrcode.make(qr_url)
-    buf = io.BytesIO()
-    qr_img.save(buf, format="PNG")
-    buf.seek(0)
-    qr_b64 = base64.b64encode(buf.getvalue()).decode()
-    total = db.total_inspecciones()
-    return render_template("home.html", qr_url=qr_url, qr_b64=qr_b64, total=total)
-
-
 @app.route("/login", methods=["POST"])
 def login():
     username = request.form.get("username", "").strip().lower()
@@ -97,11 +81,16 @@ def logout():
 
 @app.route("/inspeccion", methods=["GET", "POST"])
 def inspeccion():
+    # Fecha y hora tomadas directamente del servidor (no modificables por el usuario)
+    now = datetime.now()
+    fecha_servidor = now.strftime("%Y-%m-%d")
+    hora_servidor = now.strftime("%H:%M")
+
     if request.method == "POST":
         data = {
             "operario": request.form.get("operario", "").strip(),
             "turno": request.form.get("turno", "").strip(),
-            "fecha": request.form.get("fecha", "").strip(),
+            "fecha": fecha_servidor,  # Ignora la fecha que envía el navegador
             "area": request.form.get("area", "").strip(),
             "observaciones": request.form.get("observaciones", "").strip(),
         }
@@ -125,7 +114,7 @@ def inspeccion():
 
         db.guardar_inspeccion(data)
         return redirect(url_for("exito", n=len(fotos)))
-    return render_template("formulario.html")
+    return render_template("formulario.html", fecha_servidor=fecha_servidor, hora_servidor=hora_servidor)
 
 
 @app.route("/exito")

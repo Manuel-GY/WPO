@@ -404,7 +404,7 @@ tr:hover td { background: #fafbfc; }
     margin-bottom: 12px;
 }
 
-.hidden { display: none; }
+.hidden { display: none !important; }
 
 .badge-ok {
     display: inline-block;

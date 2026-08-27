@@ -453,6 +453,63 @@ tr:hover td { background: #fafbfc; }
     color: var(--gy-yellow) !important;
 }
 
+.nav-flex {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.login-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.08);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.login-icon:hover {
+    border-color: var(--gy-yellow);
+    background: rgba(255,255,255,0.16);
+    transform: scale(1.06);
+}
+
+.login-icon::before {
+    content: "";
+    position: absolute;
+    top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 10px; height: 8px;
+    border: 1.6px solid var(--gy-yellow);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+}
+
+.login-icon::after {
+    content: "";
+    position: absolute;
+    bottom: 7px; left: 50%;
+    transform: translateX(-50%);
+    width: 12px; height: 9px;
+    background: var(--gy-yellow);
+    border-radius: 3px;
+}
+
+.dot-on, .dot-off {
+    position: absolute;
+    top: 1px; right: 1px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--gy-dark);
+    z-index: 2;
+}
+
+.dot-on { background: #22c55e; }
+.dot-off { background: #ef4444; }
+
 /* ============ DASHBOARD HEAD ============ */
 .dash-head {
     display: flex;

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Inspecciones | Goodyear</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% include '_header.html' %}
+    <div class="container">
+        <div class="dash-head">
+            <h1>Dashboard de Inspecciones <span class="accent">WPO</span></h1>
+            {% if puede_borrar %}
+                <span class="nav-user">Sesión: {{ username }}</span>
+            {% else %}
+                <button class="btn secondary small" onclick="abrirLogin()">Acceso</button>
+            {% endif %}
+        </div>
+        <a class="btn secondary small" href="{{ url_for('qr') }}">&larr; Ver QR</a>
+
+        <!-- Modal de login -->
+        <div id="loginModal" class="modal hidden">
+            <div class="modal-box">
+                <div class="modal-head">
+                    <h3>Acceso de administración</h3>
+                    <button type="button" class="modal-close" onclick="cerrarLogin()">&times;</button>
+                </div>
+                {% if username %}
+                    <form onsubmit="cerrarSesion(event)">
+                        <p class="subtitle small">Sesión iniciada: <strong>{{ username }}</strong></p>
+                        <button type="submit" class="btn block">Cerrar sesión</button>
+                    </form>
+                {% else %}
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <label>Usuario LDAP
+                            <input type="text" id="ldapUser" required placeholder="usuario">
+                        </label>
+                        <label>Contraseña
+                            <input type="password" id="ldapPass" required placeholder="••••••••">
+                        </label>
+                        <p id="ldapError" class="error hidden"></p>
+                        <button type="submit" id="ldapSubmitBtn" class="btn block">Ingresar</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="kpis">
+            <div class="kpi">
+                <span class="kpi-num">{{ stats.total }}</span>
+                <span class="kpi-label">Total inspecciones</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-num">{{ stats.total_mes }}</span>
+                <span class="kpi-label">Este mes</span>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <section class="card">
+                <h2>Inspecciones por mes</h2>
+                {% if stats.por_mes %}
+                <table>
+                    <thead><tr><th>Mes</th><th>Inspecciones</th></tr></thead>
+                    <tbody>
+                    {% for mes, num in stats.por_mes.items() %}
+                        <tr><td>{{ mes }}</td><td>{{ num }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>Sin datos.</p>
+                {% endif %}
+            </section>
+
+            <section class="card">
+                <h2>Por turno</h2>
+                {% if stats.por_turno %}
+                <table>
+                    <thead><tr><th>Turno</th><th>Cantidad</th></tr></thead>
+                    <tbody>
+                    {% for turno, num in stats.por_turno.items() %}
+                        <tr><td>{{ turno }}</td><td>{{ num }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>Sin datos.</p>
+                {% endif %}
+            </section>
+        </div>
+
+        <section class="card">
+            <h2>Historial de inspecciones (últimas 20)</h2>
+            {% if puede_borrar %}
+            <p class="subtitle small">Modo administrador ({{ username }}): puedes borrar inspecciones de prueba. Las filas con foto no podrán eliminarse si quieres preservarlas.</p>
+            {% endif %}
+            {% if stats.registros %}
+            <table class="full">
+                <thead>
+                    <tr><th>Fecha</th><th>Turno</th><th>Operador</th><th>Puntos</th><th>Comentarios</th><th>Fotos</th>{% if puede_borrar %}<th>Acciones</th>{% endif %}</tr>
+                </thead>
+                <tbody>
+                {% for r in stats.registros[:20] %}
+                    <tr>
+                        <td>{{ r.fecha }}</td>
+                        <td>{{ r.turno }}</td>
+                        <td>{{ r.operario }}</td>
+                        <td class="puntos-cell">
+                            {% if r.puntos %}
+                                {% for k, v in r.puntos.items() %}
+                                    <div><span class="{{ 'good' if v == 'Sí' else 'bad' }}">{{ k }}: {{ v }}</span></div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ r.observaciones or '' }}</td>
+                        <td>
+                            {% for f in r.fotos_list %}
+                                <a href="{{ url_for('fotos', filename=f) }}" target="_blank">
+                                    <img class="thumb small" src="{{ url_for('fotos', filename=f) }}" alt="foto">
+                                </a>
+                            {% endfor %}
+                        </td>
+                        {% if puede_borrar %}
+                        <td>
+                            <button class="btn-del" onclick="borrarInspeccion({{ r.id }}, this)">Borrar</button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Sin registros todavía. Escanea el QR para comenzar.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <script>
+        async function borrarInspeccion(id, btn) {
+            if (!confirm('¿Seguro que deseas borrar la inspección #' + id + '? Esta acción no se puede deshacer.')) return;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const res = await fetch('/borrar/' + id, { method: 'POST' });
+                const data = await res.json();
+                if (data.ok) {
+                    btn.closest('tr').style.opacity = '0.3';
+                    btn.closest('tr').remove();
+                } else {
+                    alert(data.error || 'No se pudo borrar.');
+                    btn.disabled = false;
+                    btn.textContent = 'Borrar';
+                }
+            } catch (e) {
+                alert('Error al borrar.');
+                btn.disabled = false;
+                btn.textContent = 'Borrar';
+            }
+        }
+
+        function abrirLogin() { document.getElementById('loginModal').classList.remove('hidden'); }
+        function cerrarLogin() { document.getElementById('loginModal').classList.add('hidden'); }
+
+        function cerrarSesion(e) {
+            if (e) e.preventDefault();
+            document.getElementById('loginModal').classList.add('hidden');
+            fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('ldapUser').value.toLowerCase();
+            const pass = document.getElementById('ldapPass').value;
+            const btn = document.getElementById('ldapSubmitBtn');
+            const err = document.getElementById('ldapError');
+
+            btn.innerHTML = 'Autenticando...';
+            btn.disabled = true;
+            err.classList.add('hidden');
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ username: user, password: pass })
+                });
+                const data = await res.json();
+                if (res.ok && data.ok) {
+                    window.location.reload();
+                } else {
+                    err.textContent = data.error || 'Credenciales inválidas.';
+                    err.classList.remove('hidden');
+                }
+            } catch (er) {
+                err.textContent = 'Error de conexión con el servidor LDAP.';
+                err.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = 'Ingresar';
+                btn.disabled = false;
+            }
+        }
+
+        document.addEventListener('click', function (e) {
+            const m = document.getElementById('loginModal');
+            if (e.target === m) cerrarLogin();
+        });
+    </script>
+</body>
+</html>

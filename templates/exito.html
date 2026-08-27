@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspección registrada | Goodyear</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% include '_header.html' %}
+    <div class="container center">
+        <div class="success-icon">&#10004;</div>
+        <h1>¡Inspección registrada!</h1>
+        <p>Gracias por completar la inspección de entrega de turno.</p>
+        {% if n > 0 %}<p class="subtitle">{{ n }} foto(s) adjuntada(s) correctamente.</p>{% endif %}
+        <a class="btn" href="{{ url_for('inspeccion') }}">Realizar otra inspección</a>
+    </div>
+</body>
+</html>

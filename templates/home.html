@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrega de Turno - Inspección ASRS | Goodyear</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+    {% include '_header.html' %}
+
+    <div class="container center">
+        <h1>Entrega de Turno <span class="accent">- Inspección de Entrega de Turno</span></h1>
+        <p class="subtitle">Escanea este código QR con tu celular para llenar el formulario de inspección de entrega de turno ASRS.</p>
+
+        <div class="qr-box">
+            <div class="qr-title">INSPECCIÓN DE ENTREGA DE TURNO</div>
+            <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR de inspección">
+            <p class="qr-url">{{ qr_url }}</p>
+        </div>
+
+        <div class="kpis center" style="max-width:420px;margin:0 auto 10px;">
+            <div class="kpi">
+                <span class="kpi-num">{{ total }}</span>
+                <span class="kpi-label">Inspecciones registradas</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="btn gy-yellow" href="{{ url_for('inspeccion') }}" target="_blank">Abrir formulario</a>
+            <a class="btn secondary" href="{{ url_for('dashboard') }}">Ver dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

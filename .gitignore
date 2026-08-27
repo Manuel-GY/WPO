@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.db
+static/fotos/
+server.log
+server_err.log
+test_foto.jpg
+.venv/
+venv/

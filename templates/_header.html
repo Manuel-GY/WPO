@@ -1,0 +1,16 @@
+<div class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="{{ url_for('dashboard') }}">
+            <img class="logo-img" src="{{ url_for('static', filename='img/goodyear.svg') }}" alt="Goodyear">
+            <span class="brand-text">
+                <span class="logo-sub til">Entrega de Turno</span>
+                <span class="logo-sub">Inspección de Entrega de Turno</span>
+            </span>
+        </a>
+        <nav class="topnav">
+            <a href="{{ url_for('qr') }}">Inicio</a>
+            <a href="{{ url_for('inspeccion') }}" class="nav-form">Formulario</a>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        </nav>
+    </div>
+</div>

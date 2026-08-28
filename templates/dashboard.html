@@ -13,6 +13,14 @@
 <body>
     {% include '_header.html' %}
     <div class="container">
+        {% if mostrar_ok %}
+        <div class="toast-ok" id="toastOk">
+            <span class="toast-icon">✓</span>
+            <span class="toast-text"><strong>OK</strong> · Inspección registrada y guardada exitosamente</span>
+            <button class="toast-close" onclick="document.getElementById('toastOk').remove()">&times;</button>
+        </div>
+        {% endif %}
+
         <div class="dash-head">
             <div>
                 <h1>Dashboard de Inspecciones <span class="accent">WPO</span></h1>
@@ -178,6 +186,16 @@
 
         // Renderizado de Gráficos Chart.js
         document.addEventListener("DOMContentLoaded", function () {
+            // Ocultar toast OK después de 5 segundos si existe
+            const toast = document.getElementById('toastOk');
+            if (toast) {
+                setTimeout(() => {
+                    toast.style.transition = 'opacity 0.5s ease';
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 500);
+                }, 5000);
+            }
+
             // Gráfico 1: Cumplimiento por Turno (%)
             const ctxTurnos = document.getElementById('chartTurnos').getContext('2d');
             const dataTurnos = {{ stats.por_turno | tojson }};

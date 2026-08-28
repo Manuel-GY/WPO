@@ -125,24 +125,25 @@ def inspeccion():
         data["fotos"] = fotos
 
         db.guardar_inspeccion(data)
-        return redirect(url_for("exito", n=len(fotos)))
+        return redirect(url_for("dashboard", ok=1))
     return render_template("formulario.html", fecha_servidor=fecha_servidor, hora_servidor=hora_servidor)
 
 
 @app.route("/exito")
 def exito():
-    n = request.args.get("n", 0, type=int)
-    return render_template("exito.html", n=n)
+    return redirect(url_for("dashboard", ok=1))
 
 
 @app.route("/dashboard")
 def dashboard():
     stats = db.estadisticas()
+    mostrar_ok = request.args.get("ok") == "1"
     return render_template(
         "dashboard.html",
         stats=stats,
         puede_borrar=session.get("puede_borrar", False),
         username=session.get("username", ""),
+        mostrar_ok=mostrar_ok,
     )
 
 

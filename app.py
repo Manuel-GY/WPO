@@ -242,7 +242,7 @@ def dashboard():
 @app.route("/borrar/<int:inspeccion_id>", methods=["POST"])
 def borrar(inspeccion_id):
     if session.get("username") != BORRADO_AUTORIZADO:
-        return jsonify({"ok": False, "error": "Acceso denegado. Solo AC17157 puede borrar inspecciones."}), 403
+        return jsonify({"ok": False, "error": "Acceso denegado. Solo el Administrador puede borrar inspecciones."}), 403
     
     fotos_a_borrar = db.borrar_inspeccion(inspeccion_id)
     for foto in fotos_a_borrar:

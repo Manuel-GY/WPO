@@ -177,7 +177,7 @@ def inspeccion():
 def qrs_page():
     """Vista de catálogo de QRs imprimibles para áreas específicas."""
     host_url = request.host_url.rstrip("/")
-    areas_predeterminadas = ["Carros", "Zona Tambores", "Taller", "Mezzanina", "ASRS", "Banbury", "Confección", "Curado", "Almacén", "Mantenimiento"]
+    areas_predeterminadas = ["Carros", "Zona Tambores", "Taller", "Mezzanina"]
     return render_template("qrs.html", host_url=host_url, areas=areas_predeterminadas)
 
 

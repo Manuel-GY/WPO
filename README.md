@@ -8,9 +8,13 @@ Plataforma web corporativa para el registro, seguimiento y auditoría de **5S / 
 
 - 📱 **Formulario Móvil y Colectores Industriales (Datalogic Falcon X4 / ZTBrowser)**:
   - Compatible con lectores portátiles de código de barras / QR de planta y navegadores de colector industrial.
-  - **Detección de Ubicación por QR Escaneado**: Al escanear un QR de área (ej. `Carros`, `Zona Tambores`, `Taller`, `Mezzanina`, `ASRS`), el formulario abre seleccionando automáticamente la zona escaneada.
+  - **Detección de Ubicación por QR Escaneado**: Al escanear un QR de área (`Carros`, `Zona Tambores`, `Taller`, `Mezzanina`), el formulario abre seleccionando automáticamente la zona escaneada.
 - 🔲 **Catálogo Generador de QRs por Área (`/qrs`)**:
-  - Vista de catálogo imprimible con códigos QR preconfigurados para **Carros**, **Zona Tambores**, **Taller**, **Mezzanina**, **ASRS**, **Banbury**, **Confección**, **Curado**, **Almacén**, **Mantenimiento**.
+  - Vista de catálogo imprimible con códigos QR preconfigurados para las 4 áreas activas:
+    - 🛒 **Carros**
+    - 🛢️ **Zona Tambores**
+    - 🛠️ **Taller**
+    - 🏢 **Mezzanina**
 - 👤 **Identificación LDAP Corporativa**:
   - Validación con **Usuario LDAP** (ej. `ACXXXXX`) y **Contraseña**, obteniendo automáticamente el **Nombre Completo oficial** de la persona desde la API de la planta.
 - 🕒 **Fecha y hora inalterables**: Estampadas automáticamente por el servidor Python para garantizar la trazabilidad real.
@@ -51,7 +55,7 @@ wpo_inspecciones/
     ├── _header.html        # Barra superior, navegación y modal de login LDAP
     ├── formulario.html     # Formulario de inspección adaptado a móviles y colectores industriales
     ├── dashboard.html      # Dashboard analítico con Chart.js y visor Lightbox
-    ├── qrs.html            # Catálogo imprimible de carteles QR para áreas
+    ├── qrs.html            # Catálogo imprimible de carteles QR para las 4 áreas
     └── exito.html          # Redirección directa al Dashboard
 ```
 
@@ -84,10 +88,10 @@ Para acceder desde colectores **Datalogic Falcon X4** o celulares en la red Wi-F
 | Ruta | Método | Descripción |
 | :--- | :--- | :--- |
 | `/` | GET | Redirige al Dashboard principal |
-| `/inspeccion` | GET / POST | Formulario móvil (soporta `?area=Zona%20Tambores`, `?area=Carros`, etc.) |
+| `/inspeccion` | GET / POST | Formulario móvil (`?area=Carros`, `?area=Zona%20Tambores`, `?area=Taller`, `?area=Mezzanina`) |
 | `/dashboard` | GET | Dashboard analítico, KPIs y tabla de historial |
-| `/qrs` | GET | Catálogo de carteles imprimibles de código QR por área |
-| `/qr-img` | GET | Generador dinámico del PNG del QR (`?area=Carros`) |
+| `/qrs` | GET | Catálogo de carteles imprimibles de código QR para las 4 áreas |
+| `/qr-img` | GET | Generador dinámico del PNG del QR (`?area=Taller`) |
 | `/exportar-csv` | GET | Descarga de reporte acumulado en CSV |
 | `/login` | POST | Autenticación de usuario contra el servicio LDAP corporativo |
 | `/logout` | POST | Cierre de sesión de usuario |

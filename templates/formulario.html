@@ -17,13 +17,54 @@
             <p class="subtitle small">Registro obligatorio de Work Place Organization (WPO) al finalizar o iniciar el turno.</p>
         </div>
 
+        {% if error_ldap %}
+        <div class="toast-ok" style="background: #fef2f2; border-color: #fca5a5; color: #b91c1c; margin-bottom: 20px;">
+            <span class="toast-icon" style="background: #dc2626;">✕</span>
+            <span class="toast-text"><strong>Error LDAP Planta:</strong> {{ error_ldap }}</span>
+        </div>
+        {% endif %}
+
         <form method="POST" action="{{ url_for('inspeccion') }}" enctype="multipart/form-data" id="wpoForm">
             <section class="card">
-                <h2>1. Datos del Operador</h2>
-                <div class="grid-2-form">
-                    <label>Nombre *
-                        <input type="text" name="operario" required placeholder="Ej. Juan Pérez">
-                    </label>
+                <h2>1. Identificación del Operador (LDAP Goodyear)</h2>
+                
+                {% if session.get('username') %}
+                    <div class="badge-ok" style="margin-bottom: 14px; font-size: 0.85rem; padding: 6px 14px; display: inline-block;">
+                        ✓ Sesión activa de Planta: <strong>{{ session.get('username') }}</strong> ({{ session.get('full_name') }})
+                    </div>
+                    <div class="grid-2-form">
+                        <label>Usuario LDAP *
+                            <input type="text" name="usuario_ldap" value="{{ session.get('username') }}" readonly class="read-only-input">
+                        </label>
+                        <label>Nombre del Operador *
+                            <input type="text" name="operario" value="{{ session.get('full_name') }}" readonly class="read-only-input">
+                        </label>
+                    </div>
+                {% else %}
+                    <div class="grid-2-form">
+                        <label>Usuario LDAP (ej. AC17157) *
+                            <input type="text" name="usuario_ldap" id="usuarioLdap" required placeholder="ej. ac17157" value="{{ usuario_ldap_input or '' }}">
+                        </label>
+                        <label>Contraseña LDAP (Validación Planta) *
+                            <input type="password" name="password_ldap" id="passwordLdap" required placeholder="••••••••">
+                        </label>
+                    </div>
+                    
+                    <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn secondary small-btn" onclick="validarUsuarioLdap()">
+                            🔍 Validar Nombre en LDAP
+                        </button>
+                        <span id="ldapStatusBadge" class="hidden"></span>
+                    </div>
+
+                    <div style="margin-top: 14px;">
+                        <label>Nombre del Operador (Autocompletado desde LDAP) *
+                            <input type="text" name="operario" id="operarioNombre" required placeholder="Se completará al validar en LDAP..." value="{{ operario_input or '' }}">
+                        </label>
+                    </div>
+                {% endif %}
+
+                <div class="grid-2-form" style="margin-top: 14px;">
                     <label>Turno *
                         <select name="turno" required>
                             <option value="">Seleccionar turno...</option>
@@ -33,18 +74,19 @@
                             <option value="D">Turno D</option>
                         </select>
                     </label>
+                    <label>Área
+                        <input type="text" name="area" value="ASRS" readonly class="read-only-input">
+                    </label>
                 </div>
+
                 <div class="grid-2-form" style="margin-top: 10px;">
-                    <label>Fecha de Inspección (Servidor)
+                    <label>Fecha (Servidor)
                         <input type="text" value="{{ fecha_servidor }}" readonly class="read-only-input">
                     </label>
-                    <label>Hora de Inspección (Servidor)
+                    <label>Hora (Servidor)
                         <input type="text" value="{{ hora_servidor }}" readonly class="read-only-input">
                     </label>
                 </div>
-                <p class="subtitle small" style="margin-top: 6px; font-size: 0.8rem; color: var(--muted);">
-                    🔒 La fecha y hora son estampadas automáticamente por el servidor para garantizar la validez del registro.
-                </p>
             </section>
 
             <section class="card">
@@ -120,6 +162,45 @@
     </div>
 
     <script>
+        // Validar Usuario LDAP en tiempo real
+        async function validarUsuarioLdap() {
+            const user = document.getElementById('usuarioLdap').value.trim();
+            const pass = document.getElementById('passwordLdap').value;
+            const badge = document.getElementById('ldapStatusBadge');
+            const operarioInput = document.getElementById('operarioNombre');
+
+            if (!user || !pass) {
+                alert('Ingresa tu Usuario LDAP y Contraseña para validar.');
+                return;
+            }
+
+            badge.className = 'badge-ok';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#92400e';
+            badge.textContent = 'Validando en LDAP de Planta... ⏳';
+            badge.classList.remove('hidden');
+
+            try {
+                const res = await fetch('/api/ldap-lookup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const data = await res.json();
+                if (res.ok && data.ok) {
+                    operarioInput.value = data.full_name;
+                    badge.className = 'badge-ok';
+                    badge.textContent = '✓ Validado: ' + data.full_name;
+                } else {
+                    badge.className = 'badge-no';
+                    badge.textContent = '✕ ' + (data.error || 'Credenciales inválidas');
+                }
+            } catch (e) {
+                badge.className = 'badge-no';
+                badge.textContent = '✕ Error de conexión con LDAP';
+            }
+        }
+
         const input = document.getElementById('fotosInput');
         const prev = document.getElementById('previstas');
         input.addEventListener('change', () => {

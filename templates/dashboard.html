@@ -86,7 +86,7 @@
                             <th>ID</th>
                             <th>Fecha</th>
                             <th>Turno</th>
-                            <th>Operador</th>
+                            <th>Operador (User LDAP)</th>
                             <th>Evaluación Puntos WPO</th>
                             <th>Comentarios</th>
                             <th>Evidencia Fotográfica</th>
@@ -99,7 +99,12 @@
                             <td class="muted">#{{ r.id }}</td>
                             <td><strong>{{ r.fecha }}</strong></td>
                             <td><span class="badge-turno turno-{{ r.turno }}">{{ r.turno }}</span></td>
-                            <td>{{ r.operario }}</td>
+                            <td>
+                                <strong>{{ r.operario }}</strong>
+                                {% if r.usuario_ldap %}
+                                <span class="muted" style="font-size: 0.78rem; display: block; font-family: monospace;">ID: {{ r.usuario_ldap }}</span>
+                                {% endif %}
+                            </td>
                             <td class="puntos-cell">
                                 {% if r.puntos %}
                                     <div class="puntos-grid">

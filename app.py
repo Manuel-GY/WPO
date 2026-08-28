@@ -95,6 +95,17 @@ def logout():
     return jsonify({"ok": True})
 
 
+@app.route("/api/ldap-lookup", methods=["POST"])
+def ldap_lookup():
+    data = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip().lower()
+    password = data.get("password", "")
+    res = ldap_autenticar(username, password)
+    if res["ok"]:
+        return jsonify({"ok": True, "username": res["username"], "full_name": res["full_name"]})
+    return jsonify({"ok": False, "error": res["error"]}), 401
+
+
 @app.route("/inspeccion", methods=["GET", "POST"])
 def inspeccion():
     now = datetime.now()
@@ -102,8 +113,32 @@ def inspeccion():
     hora_servidor = now.strftime("%H:%M")
 
     if request.method == "POST":
+        usuario_ldap = request.form.get("usuario_ldap", "").strip().lower()
+        operario_nombre = request.form.get("operario", "").strip()
+        password_ldap = request.form.get("password_ldap", "")
+
+        # Si el usuario ingresó contraseña o se requiere validar con el LDAP de la planta
+        if password_ldap:
+            auth_res = ldap_autenticar(usuario_ldap, password_ldap)
+            if not auth_res["ok"]:
+                return render_template(
+                    "formulario.html",
+                    fecha_servidor=fecha_servidor,
+                    hora_servidor=hora_servidor,
+                    error_ldap=auth_res["error"],
+                    usuario_ldap_input=usuario_ldap,
+                    operario_input=operario_nombre,
+                )
+            usuario_ldap = auth_res["username"]
+            operario_nombre = auth_res["full_name"]
+        elif session.get("username"):
+            # Si hay una sesión activa, usar los datos del usuario logueado
+            usuario_ldap = session.get("username")
+            operario_nombre = session.get("full_name") or operario_nombre
+
         data = {
-            "operario": request.form.get("operario", "").strip(),
+            "usuario_ldap": usuario_ldap,
+            "operario": operario_nombre,
             "turno": request.form.get("turno", "").strip(),
             "fecha": fecha_servidor,
             "area": request.form.get("area", "ASRS").strip(),
@@ -171,7 +206,7 @@ def exportar_csv():
         data = io.StringIO()
         writer = csv.writer(data)
         writer.writerow([
-            "ID", "Fecha", "Turno", "Area", "Operario",
+            "ID", "Fecha", "Turno", "Area", "Usuario LDAP", "Nombre Operario",
             "Escritorio Limpio", "Piso Limpio", "Mueble Repuestos", "Sin Repuestos Mesón/Piso",
             "Observaciones", "Cantidad Fotos"
         ])
@@ -186,7 +221,8 @@ def exportar_csv():
                 r.get("fecha"),
                 r.get("turno"),
                 r.get("area", "ASRS"),
-                r.get("operario"),
+                r.get("usuario_ldap", ""),
+                r.get("operario", ""),
                 puntos.get("Escritorio", ""),
                 puntos.get("Piso", ""),
                 puntos.get("MuebleRepuestos", ""),

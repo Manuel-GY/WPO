@@ -21,6 +21,7 @@ def init_db():
                 fecha TEXT,
                 turno TEXT,
                 area TEXT,
+                usuario_ldap TEXT DEFAULT '',
                 operario TEXT,
                 observaciones TEXT,
                 puntos TEXT,
@@ -28,10 +29,12 @@ def init_db():
                 creado_en TEXT DEFAULT (datetime('now', 'localtime'))
             )
         """)
-        # Migración: agregar columna fotos si no existe (para BD creadas antes)
+        # Migración: agregar columna fotos y usuario_ldap si no existen
         cols = [r[1] for r in conn.execute("PRAGMA table_info(inspecciones)").fetchall()]
         if "fotos" not in cols:
             conn.execute("ALTER TABLE inspecciones ADD COLUMN fotos TEXT DEFAULT '[]'")
+        if "usuario_ldap" not in cols:
+            conn.execute("ALTER TABLE inspecciones ADD COLUMN usuario_ldap TEXT DEFAULT ''")
         conn.commit()
 
 
@@ -41,12 +44,13 @@ def guardar_inspeccion(data):
     fotos_json = json_dumps(fotos_l)
     with get_db() as conn:
         cur = conn.execute(
-            """INSERT INTO inspecciones (fecha, turno, area, operario, observaciones, puntos, fotos)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO inspecciones (fecha, turno, area, usuario_ldap, operario, observaciones, puntos, fotos)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 data.get("fecha"),
                 data.get("turno"),
                 data.get("area", "ASRS"),
+                data.get("usuario_ldap", ""),
                 data.get("operario"),
                 data.get("observaciones"),
                 puntos_json,

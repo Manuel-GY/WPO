@@ -28,8 +28,21 @@ LDAP_API = os.environ.get("LDAP_API", "http://10.107.194.110:8080/api/login-ldap
 db.init_db()
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-# Usuario único autorizado para borrado de inspecciones
+# Usuario único autorizado para borrado de inspecciones y ver QRs
 BORRADO_AUTORIZADO = "ac17157"
+
+
+def es_colector_o_movil(user_agent_str):
+    """Detecta si la petición proviene de un colector industrial (Datalogic, ZTBrowser, Windows CE) o móvil."""
+    if not user_agent_str:
+        return False
+    ua = user_agent_str.lower()
+    keywords = [
+        "datalogic", "falcon", "skorpio", "ztbrowser", "windows ce", "wce",
+        "mobile", "arm", "android", "pocketie", "symbian", "webos", "iphone",
+        "ipad", "ipod", "blackberry", "iemobile", "opera mini", "windows phone"
+    ]
+    return any(k in ua for k in keywords)
 
 
 def procesar_y_guardar_foto(file_obj, upload_folder, name):
@@ -110,11 +123,17 @@ def ldap_lookup():
 
 @app.route("/inspeccion", methods=["GET", "POST"])
 def inspeccion():
+    es_admin = session.get("username") == BORRADO_AUTORIZADO
+    user_agent = request.user_agent.string if request.user_agent else ""
+    es_dispositivo_movil = es_colector_o_movil(user_agent)
+
+    # Restricción: Bloquear acceso desde navegador PC estándar si NO es el Administrador AC17157
+    if not es_admin and not es_dispositivo_movil:
+        return render_template("acceso_denegado_pc.html")
+
     now = datetime.now()
     fecha_servidor = now.strftime("%Y-%m-%d")
     hora_servidor = now.strftime("%H:%M")
-
-    # Parámetro de área desde QR (ej. /inspeccion?area=Zona%20Tambores)
     area_param = request.args.get("area", "").strip()
 
     if request.method == "POST":
@@ -145,7 +164,7 @@ def inspeccion():
             "operario": operario_nombre,
             "turno": request.form.get("turno", "").strip(),
             "fecha": fecha_servidor,
-            "area": request.form.get("area", "General").strip(),
+            "area": request.form.get("area", "Carros").strip(),
             "observaciones": request.form.get("observaciones", "").strip(),
         }
         puntos = {}
@@ -175,7 +194,10 @@ def inspeccion():
 
 @app.route("/qrs")
 def qrs_page():
-    """Vista de catálogo de QRs imprimibles para áreas específicas."""
+    """Vista de catálogo de QRs imprimibles - Exclusivo para Administrador AC17157."""
+    if session.get("username") != BORRADO_AUTORIZADO:
+        return redirect(url_for("dashboard", err="qr_denied"))
+    
     host_url = request.host_url.rstrip("/")
     areas_predeterminadas = ["Carros", "Zona Tambores", "Taller", "Mezzanina"]
     return render_template("qrs.html", host_url=host_url, areas=areas_predeterminadas)
@@ -184,7 +206,10 @@ def qrs_page():
 @app.route("/qr-img")
 def qr_img():
     """Generador dinámico de imagen PNG de QR según área."""
-    area = request.args.get("area", "General").strip()
+    if session.get("username") != BORRADO_AUTORIZADO:
+        return jsonify({"ok": False, "error": "Acceso denegado"}), 403
+
+    area = request.args.get("area", "Carros").strip()
     host_url = request.host_url.rstrip("/")
     target_url = f"{host_url}/inspeccion?area={urllib.parse.quote(area)}"
     img = qrcode.make(target_url)
@@ -203,12 +228,14 @@ def exito():
 def dashboard():
     stats = db.estadisticas()
     mostrar_ok = request.args.get("ok") == "1"
+    err = request.args.get("err")
     return render_template(
         "dashboard.html",
         stats=stats,
         puede_borrar=session.get("puede_borrar", False),
         username=session.get("username", ""),
         mostrar_ok=mostrar_ok,
+        err=err,
     )
 
 
@@ -250,7 +277,7 @@ def exportar_csv():
                 r.get("id"),
                 r.get("fecha"),
                 r.get("turno"),
-                r.get("area", "General"),
+                r.get("area", "Carros"),
                 r.get("usuario_ldap", ""),
                 r.get("operario", ""),
                 puntos.get("Escritorio", ""),

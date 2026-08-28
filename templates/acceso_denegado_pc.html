@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Restringido | Goodyear 5S / WPO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% include '_header.html' %}
+    <div class="container center" style="max-width: 620px; padding-top: 40px;">
+        <div class="card" style="padding: 40px 28px; border-top: 5px solid var(--gy-red);">
+            <div class="toast-icon" style="background: var(--gy-red); width: 64px; height: 64px; font-size: 2.2rem; margin: 0 auto 16px;">
+                🔒
+            </div>
+            <h1 style="font-size: 1.6rem; color: #0f172a; margin-bottom: 8px;">Acceso Exclusivo desde Colector</h1>
+            <p class="subtitle" style="font-size: 0.95rem; margin-bottom: 20px; color: #475569;">
+                Las inspecciones de entrega de turno <strong>5S / WPO</strong> deben realizarse obligatoriamente desde la pistola colectora <strong>Datalogic Falcon X4</strong> escaneando el código QR del área.
+            </p>
+
+            <div style="background: #f8fafc; border: 1px dashed #cbd5e1; padding: 16px; border-radius: 12px; font-size: 0.85rem; color: #64748b; margin-bottom: 24px; text-align: left;">
+                ℹ️ <strong>Información:</strong><br>
+                • Si eres operador, escanea el código QR de la zona (Carros, Zona Tambores, Taller o Mezzanina) utilizando el colector Datalogic.<br>
+                • Si eres el administrador (AC17157), inicia sesión en la barra superior para habilitar el acceso de prueba desde la PC.
+            </div>
+
+            <div class="actions">
+                <a class="btn secondary" href="{{ url_for('dashboard') }}">📊 Ir al Dashboard</a>
+                <button onclick="abrirLogin()" class="btn gy-yellow">🔑 Iniciar Sesión Admin</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

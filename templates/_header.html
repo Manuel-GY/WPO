@@ -10,7 +10,9 @@
         <div class="nav-flex">
             <nav class="topnav">
                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                {% if session.get('puede_borrar') %}
                 <a href="{{ url_for('qrs_page') }}" title="Catálogo de QRs Imprimibles por Área">QRs Áreas</a>
+                {% endif %}
             </nav>
             <!-- Botón de acceso discreto -->
             <button class="login-icon" onclick="abrirLogin()" title="Acceso de administración LDAP">

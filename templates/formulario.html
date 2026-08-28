@@ -2,11 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulario - Plataforma de Control 5S / WPO | Goodyear</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -40,39 +37,43 @@
                         ✓ Sesión activa de Planta: <strong>{{ session.get('username') }}</strong> ({{ session.get('full_name') }})
                     </div>
                     <div class="grid-2-form">
-                        <label>Usuario LDAP *
+                        <div class="form-group">
+                            <label>Usuario LDAP *</label>
                             <input type="text" name="usuario_ldap" value="{{ session.get('username') }}" readonly class="read-only-input">
-                        </label>
-                        <label>Nombre del Operador *
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre del Operador *</label>
                             <input type="text" name="operario" value="{{ session.get('full_name') }}" readonly class="read-only-input">
-                        </label>
+                        </div>
                     </div>
                 {% else %}
                     <div class="grid-2-form">
-                        <label>Usuario LDAP (ej. ACXXXXX) *
+                        <div class="form-group">
+                            <label>Usuario LDAP (ej. ACXXXXX) *</label>
                             <input type="text" name="usuario_ldap" id="usuarioLdap" autofocus required placeholder="ej. ACXXXXX" value="{{ usuario_ldap_input or '' }}">
-                        </label>
-                        <label>Contraseña LDAP (Validación Planta) *
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña LDAP (Validación Planta) *</label>
                             <input type="password" name="password_ldap" id="passwordLdap" required placeholder="••••••••">
-                        </label>
+                        </div>
                     </div>
                     
-                    <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div style="margin-top: 12px; margin-bottom: 12px;">
                         <button type="button" class="btn gy-yellow small-btn" onclick="accederLdap()">
                             Acceder
                         </button>
                         <span id="ldapStatusBadge" class="hidden"></span>
                     </div>
 
-                    <div style="margin-top: 14px;">
-                        <label>Nombre del Operador *
-                            <input type="text" name="operario" id="operarioNombre" required placeholder="Presiona Acceder para obtener tu nombre..." value="{{ operario_input or '' }}" readonly class="read-only-input">
-                        </label>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Nombre del Operador *</label>
+                        <input type="text" name="operario" id="operarioNombre" placeholder="Se completará automáticamente al ingresar clave..." value="{{ operario_input or '' }}">
                     </div>
                 {% endif %}
 
                 <div class="grid-2-form" style="margin-top: 14px;">
-                    <label>Turno *
+                    <div class="form-group">
+                        <label>Turno *</label>
                         <select name="turno" required>
                             <option value="">Seleccionar turno...</option>
                             <option value="A">Turno A</option>
@@ -80,24 +81,27 @@
                             <option value="C">Turno C</option>
                             <option value="D">Turno D</option>
                         </select>
-                    </label>
-                    <label>Área *
+                    </div>
+                    <div class="form-group">
+                        <label>Área *</label>
                         <select name="area" id="areaSelect" required>
                             <option value="Carros">Carros</option>
                             <option value="Zona Tambores">Zona Tambores</option>
                             <option value="Taller">Taller</option>
                             <option value="Mezzanina">Mezzanina</option>
                         </select>
-                    </label>
+                    </div>
                 </div>
 
                 <div class="grid-2-form" style="margin-top: 10px;">
-                    <label>Fecha (Servidor)
+                    <div class="form-group">
+                        <label>Fecha (Servidor)</label>
                         <input type="text" value="{{ fecha_servidor }}" readonly class="read-only-input">
-                    </label>
-                    <label>Hora (Servidor)
+                    </div>
+                    <div class="form-group">
+                        <label>Hora (Servidor)</label>
                         <input type="text" value="{{ hora_servidor }}" readonly class="read-only-input">
-                    </label>
+                    </div>
                 </div>
             </section>
 
@@ -151,8 +155,8 @@
             </section>
 
             <section class="card">
-                <h2>3. Evidencia Fotográfica (Opcional pero Recomendado)</h2>
-                <p class="subtitle small">Toma fotos directamente con la cámara del colector/celular o adjunta desde la galería.</p>
+                <h2>3. Evidencia Fotográfica (Opcional)</h2>
+                <p class="subtitle small">Toma fotos directamente con la cámara del colector o adjunta desde el dispositivo.</p>
                 <div class="file-upload-wrapper">
                     <input type="file" name="fotos" id="fotosInput" accept="image/*" capture="environment" multiple class="photos-upload-hidden">
                     <label for="fotosInput" class="btn secondary block-upload">
@@ -173,14 +177,15 @@
         </form>
     </div>
 
+    <!-- JavaScript ES5 puro compatible con Windows CE / IE Mobile y Browsers modernos -->
     <script>
-        // Si viene parámetro de Área por QR, seleccionar automáticamente en el dropdown
-        document.addEventListener("DOMContentLoaded", function () {
-            const areaParam = "{{ area_param }}";
-            if (areaParam) {
-                const select = document.getElementById("areaSelect");
-                let found = false;
-                for (let i = 0; i < select.options.length; i++) {
+        // Autoselección de área por parámetro de URL
+        var areaParam = "{{ area_param }}";
+        if (areaParam) {
+            var select = document.getElementById("areaSelect");
+            if (select) {
+                var found = false;
+                for (var i = 0; i < select.options.length; i++) {
                     if (select.options[i].value.toLowerCase() === areaParam.toLowerCase()) {
                         select.selectedIndex = i;
                         found = true;
@@ -188,21 +193,25 @@
                     }
                 }
                 if (!found) {
-                    const opt = document.createElement("option");
+                    var opt = document.createElement("option");
                     opt.value = areaParam;
-                    opt.textContent = areaParam;
+                    opt.text = areaParam;
                     opt.selected = true;
                     select.appendChild(opt);
                 }
             }
-        });
+        }
 
-        // Autenticar Usuario LDAP y obtener nombre al hacer clic en Acceder
-        async function accederLdap() {
-            const user = document.getElementById('usuarioLdap').value.trim();
-            const pass = document.getElementById('passwordLdap').value;
-            const badge = document.getElementById('ldapStatusBadge');
-            const operarioInput = document.getElementById('operarioNombre');
+        // Acceso LDAP compatible con XMLHttpRequest (ES5)
+        function accederLdap() {
+            var userElem = document.getElementById('usuarioLdap');
+            var passElem = document.getElementById('passwordLdap');
+            var badge = document.getElementById('ldapStatusBadge');
+            var operarioInput = document.getElementById('operarioNombre');
+
+            if (!userElem || !passElem) return;
+            var user = userElem.value.replace(/^\s+|\s+$/g, '');
+            var pass = passElem.value;
 
             if (!user || !pass) {
                 alert('Por favor ingresa tu Usuario LDAP y Contraseña para acceder.');
@@ -212,53 +221,70 @@
             badge.className = 'badge-ok';
             badge.style.background = '#fef3c7';
             badge.style.color = '#92400e';
-            badge.textContent = 'Accediendo a LDAP Planta... ⏳';
-            badge.classList.remove('hidden');
+            badge.innerHTML = 'Accediendo a LDAP Planta... ⏳';
+            badge.style.display = 'inline-block';
 
-            try {
-                const res = await fetch('/api/ldap-lookup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user, password: pass })
-                });
-                const data = await res.json();
-                if (res.ok && data.ok) {
-                    operarioInput.value = data.full_name;
-                    badge.className = 'badge-ok';
-                    badge.textContent = '✓ Acceso concedido: ' + data.full_name;
-                } else {
-                    badge.className = 'badge-no';
-                    badge.textContent = '✕ ' + (data.error || 'Credenciales inválidas');
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/ldap-lookup', true);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            if (data.ok) {
+                                operarioInput.value = data.full_name;
+                                badge.className = 'badge-ok';
+                                badge.innerHTML = '✓ Acceso concedido: ' + data.full_name;
+                            } else {
+                                badge.className = 'badge-no';
+                                badge.innerHTML = '✕ ' + (data.error || 'Credenciales inválidas');
+                            }
+                        } catch (e) {
+                            badge.className = 'badge-no';
+                            badge.innerHTML = '✕ Error al procesar respuesta LDAP';
+                        }
+                    } else {
+                        badge.className = 'badge-no';
+                        badge.innerHTML = '✕ Credenciales o conexión LDAP inválida';
+                    }
                 }
-            } catch (e) {
-                badge.className = 'badge-no';
-                badge.textContent = '✕ Error de conexión con LDAP';
-            }
+            };
+            xhr.send(JSON.stringify({ username: user, password: pass }));
         }
 
-        const input = document.getElementById('fotosInput');
-        const prev = document.getElementById('previstas');
-        input.addEventListener('change', () => {
-            prev.innerHTML = '';
-            if (input.files.length === 0) return;
-            
-            [...input.files].forEach((f, idx) => {
-                const url = URL.createObjectURL(f);
-                const item = document.createElement('div');
-                item.className = 'thumb-preview-item';
-                item.innerHTML = `
-                    <img src="${url}" class="thumb">
-                    <span class="thumb-name">${f.name.substring(0, 15)}...</span>
-                `;
-                prev.appendChild(item);
-            });
-        });
+        // Preview de imágenes compatible
+        var fotosInput = document.getElementById('fotosInput');
+        if (fotosInput) {
+            fotosInput.onchange = function () {
+                var prev = document.getElementById('previstas');
+                if (!prev) return;
+                prev.innerHTML = '';
+                if (!fotosInput.files || fotosInput.files.length === 0) return;
+                
+                for (var j = 0; j < fotosInput.files.length; j++) {
+                    var f = fotosInput.files[j];
+                    if (window.URL && window.URL.createObjectURL) {
+                        var url = window.URL.createObjectURL(f);
+                        var item = document.createElement('div');
+                        item.className = 'thumb-preview-item';
+                        item.innerHTML = '<img src="' + url + '" class="thumb"><span class="thumb-name">' + f.name.substring(0, 15) + '...</span>';
+                        prev.appendChild(item);
+                    }
+                }
+            };
+        }
 
-        document.getElementById('wpoForm').addEventListener('submit', function () {
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerHTML = 'Enviando e indexando fotos... ⏳';
-        });
+        var wpoForm = document.getElementById('wpoForm');
+        if (wpoForm) {
+            wpoForm.onsubmit = function () {
+                var btn = document.getElementById('submitBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = 'Enviando e indexando fotos... ⏳';
+                }
+            };
+        }
     </script>
 </body>
 </html>

@@ -7,7 +7,6 @@ from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, send_file
 import requests
-import qrcode
 from PIL import Image, ImageOps
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -202,24 +201,6 @@ def exportar_csv():
     response = app.response_class(generate(), mimetype="text/csv; charset=utf-8")
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
     return response
-
-
-@app.route("/qr")
-def qr_page():
-    host_url = request.host_url.rstrip("/")
-    target_url = f"{host_url}/inspeccion"
-    return render_template("qr.html", target_url=target_url)
-
-
-@app.route("/qr.png")
-def qr_image():
-    host_url = request.host_url.rstrip("/")
-    target_url = f"{host_url}/inspeccion"
-    img = qrcode.make(target_url)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    return send_file(buf, mimetype="image/png")
 
 
 @app.route("/fotos/<path:filename>")

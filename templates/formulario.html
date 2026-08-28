@@ -42,24 +42,24 @@
                     </div>
                 {% else %}
                     <div class="grid-2-form">
-                        <label>Usuario LDAP (ej. AC17157) *
-                            <input type="text" name="usuario_ldap" id="usuarioLdap" required placeholder="ej. ac17157" value="{{ usuario_ldap_input or '' }}">
+                        <label>Usuario LDAP (ej. ACXXXXX) *
+                            <input type="text" name="usuario_ldap" id="usuarioLdap" required placeholder="ej. ACXXXXX" value="{{ usuario_ldap_input or '' }}">
                         </label>
                         <label>Contraseña LDAP (Validación Planta) *
                             <input type="password" name="password_ldap" id="passwordLdap" required placeholder="••••••••">
                         </label>
                     </div>
                     
-                    <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn secondary small-btn" onclick="validarUsuarioLdap()">
-                            🔍 Validar Nombre en LDAP
+                    <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn gy-yellow small-btn" onclick="accederLdap()">
+                            Acceder
                         </button>
                         <span id="ldapStatusBadge" class="hidden"></span>
                     </div>
 
                     <div style="margin-top: 14px;">
-                        <label>Nombre del Operador (Autocompletado desde LDAP) *
-                            <input type="text" name="operario" id="operarioNombre" required placeholder="Se completará al validar en LDAP..." value="{{ operario_input or '' }}">
+                        <label>Nombre del Operador *
+                            <input type="text" name="operario" id="operarioNombre" required placeholder="Presiona Acceder para obtener tu nombre..." value="{{ operario_input or '' }}" readonly class="read-only-input">
                         </label>
                     </div>
                 {% endif %}
@@ -162,22 +162,22 @@
     </div>
 
     <script>
-        // Validar Usuario LDAP en tiempo real
-        async function validarUsuarioLdap() {
+        // Autenticar Usuario LDAP y obtener nombre al hacer clic en Acceder
+        async function accederLdap() {
             const user = document.getElementById('usuarioLdap').value.trim();
             const pass = document.getElementById('passwordLdap').value;
             const badge = document.getElementById('ldapStatusBadge');
             const operarioInput = document.getElementById('operarioNombre');
 
             if (!user || !pass) {
-                alert('Ingresa tu Usuario LDAP y Contraseña para validar.');
+                alert('Por favor ingresa tu Usuario LDAP y Contraseña para acceder.');
                 return;
             }
 
             badge.className = 'badge-ok';
             badge.style.background = '#fef3c7';
             badge.style.color = '#92400e';
-            badge.textContent = 'Validando en LDAP de Planta... ⏳';
+            badge.textContent = 'Accediendo a LDAP Planta... ⏳';
             badge.classList.remove('hidden');
 
             try {
@@ -190,7 +190,7 @@
                 if (res.ok && data.ok) {
                     operarioInput.value = data.full_name;
                     badge.className = 'badge-ok';
-                    badge.textContent = '✓ Validado: ' + data.full_name;
+                    badge.textContent = '✓ Acceso concedido: ' + data.full_name;
                 } else {
                     badge.className = 'badge-no';
                     badge.textContent = '✕ ' + (data.error || 'Credenciales inválidas');

@@ -3,10 +3,12 @@ import sys
 import uuid
 import io
 import csv
+import urllib.parse
 from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, send_file
 import requests
+import qrcode
 from PIL import Image, ImageOps
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +18,7 @@ if BASE_DIR not in sys.path:
 import database as db
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "goodyear-wpo-asrs-secret-key-2026")
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "goodyear-wpo-5s-secret-key-2026")
 app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "static", "fotos")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
@@ -112,12 +114,14 @@ def inspeccion():
     fecha_servidor = now.strftime("%Y-%m-%d")
     hora_servidor = now.strftime("%H:%M")
 
+    # Parámetro de área desde QR (ej. /inspeccion?area=Zona%20Tambores)
+    area_param = request.args.get("area", "").strip()
+
     if request.method == "POST":
         usuario_ldap = request.form.get("usuario_ldap", "").strip().lower()
         operario_nombre = request.form.get("operario", "").strip()
         password_ldap = request.form.get("password_ldap", "")
 
-        # Si el usuario ingresó contraseña o se requiere validar con el LDAP de la planta
         if password_ldap:
             auth_res = ldap_autenticar(usuario_ldap, password_ldap)
             if not auth_res["ok"]:
@@ -125,6 +129,7 @@ def inspeccion():
                     "formulario.html",
                     fecha_servidor=fecha_servidor,
                     hora_servidor=hora_servidor,
+                    area_param=area_param,
                     error_ldap=auth_res["error"],
                     usuario_ldap_input=usuario_ldap,
                     operario_input=operario_nombre,
@@ -132,7 +137,6 @@ def inspeccion():
             usuario_ldap = auth_res["username"]
             operario_nombre = auth_res["full_name"]
         elif session.get("username"):
-            # Si hay una sesión activa, usar los datos del usuario logueado
             usuario_ldap = session.get("username")
             operario_nombre = session.get("full_name") or operario_nombre
 
@@ -141,7 +145,7 @@ def inspeccion():
             "operario": operario_nombre,
             "turno": request.form.get("turno", "").strip(),
             "fecha": fecha_servidor,
-            "area": request.form.get("area", "ASRS").strip(),
+            "area": request.form.get("area", "General").strip(),
             "observaciones": request.form.get("observaciones", "").strip(),
         }
         puntos = {}
@@ -161,7 +165,33 @@ def inspeccion():
 
         db.guardar_inspeccion(data)
         return redirect(url_for("dashboard", ok=1))
-    return render_template("formulario.html", fecha_servidor=fecha_servidor, hora_servidor=hora_servidor)
+    return render_template(
+        "formulario.html",
+        fecha_servidor=fecha_servidor,
+        hora_servidor=hora_servidor,
+        area_param=area_param,
+    )
+
+
+@app.route("/qrs")
+def qrs_page():
+    """Vista de catálogo de QRs imprimibles para áreas específicas."""
+    host_url = request.host_url.rstrip("/")
+    areas_predeterminadas = ["Carros", "Zona Tambores", "Taller", "Mezzanina", "ASRS", "Banbury", "Confección", "Curado", "Almacén", "Mantenimiento"]
+    return render_template("qrs.html", host_url=host_url, areas=areas_predeterminadas)
+
+
+@app.route("/qr-img")
+def qr_img():
+    """Generador dinámico de imagen PNG de QR según área."""
+    area = request.args.get("area", "General").strip()
+    host_url = request.host_url.rstrip("/")
+    target_url = f"{host_url}/inspeccion?area={urllib.parse.quote(area)}"
+    img = qrcode.make(target_url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return send_file(buf, mimetype="image/png")
 
 
 @app.route("/exito")
@@ -220,7 +250,7 @@ def exportar_csv():
                 r.get("id"),
                 r.get("fecha"),
                 r.get("turno"),
-                r.get("area", "ASRS"),
+                r.get("area", "General"),
                 r.get("usuario_ldap", ""),
                 r.get("operario", ""),
                 puntos.get("Escritorio", ""),
@@ -234,7 +264,7 @@ def exportar_csv():
             data.seek(0)
             data.truncate(0)
 
-    filename = f"inspecciones_wpo_goodyear_{datetime.now().strftime('%Y%m%d')}.csv"
+    filename = f"inspecciones_5s_wpo_goodyear_{datetime.now().strftime('%Y%m%d')}.csv"
     response = app.response_class(generate(), mimetype="text/csv; charset=utf-8")
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
     return response

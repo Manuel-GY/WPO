@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Códigos QR por Área | Goodyear</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .qr-catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .qr-card-item {
+            background: #ffffff;
+            border: 2px solid var(--border);
+            border-radius: 18px;
+            padding: 24px 16px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .qr-card-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .qr-area-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .qr-area-sub {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .qr-img-thumb {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 12px;
+            display: block;
+            border: 6px solid #f8fafc;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        }
+        .qr-url-code {
+            font-family: monospace;
+            font-size: 0.76rem;
+            background: #f1f5f9;
+            padding: 6px 10px;
+            border-radius: 6px;
+            color: #334155;
+            word-break: break-all;
+            margin-bottom: 14px;
+        }
+        @media print {
+            .topbar, .actions-print, .dash-head { display: none !important; }
+            body { background: #fff !important; }
+            .container { padding: 0 !important; max-width: 100% !important; }
+            .qr-catalog-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 15px !important;
+            }
+            .qr-card-item {
+                break-inside: avoid;
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                padding: 16px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include '_header.html' %}
+    <div class="container">
+        <div class="dash-head">
+            <div>
+                <h1>Catálogo de Códigos QR por <span class="accent">Área</span></h1>
+                <p class="subtitle small">Imprime los carteles QR para pegar en Carros, Zona Tambores, Taller, Mezzanina y áreas de planta. Compatible con pistolas Datalogic Falcon X4 y ZTBrowser.</p>
+            </div>
+            <div class="dash-actions actions-print">
+                <button onclick="window.print()" class="btn gy-yellow">🖨️ Imprimir Carteles de QR</button>
+            </div>
+        </div>
+
+        <div class="qr-catalog-grid">
+            {% for area in areas %}
+            <div class="qr-card-item">
+                <img src="{{ url_for('static', filename='img/goodyear.svg') }}" alt="Goodyear" style="height: 32px; margin-bottom: 8px;">
+                <div class="qr-area-title">📍 {{ area }}</div>
+                <div class="qr-area-sub">Escanea para iniciar inspección 5S / WPO</div>
+                
+                <img class="qr-img-thumb" src="{{ url_for('qr_img', area=area) }}" alt="QR {{ area }}">
+                
+                <div class="qr-url-code">/inspeccion?area={{ area | replace(' ', '%20') }}</div>
+                <a href="{{ url_for('inspeccion', area=area) }}" target="_blank" class="btn secondary small-btn actions-print">
+                    Probar Enlace ↗
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,10 +1,14 @@
 import os
 import sys
 import uuid
+import io
+import csv
 from datetime import datetime
 
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, send_file
 import requests
+import qrcode
+from PIL import Image, ImageOps
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -13,7 +17,7 @@ if BASE_DIR not in sys.path:
 import database as db
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "cambia-esta-clave-en-produccion"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "goodyear-wpo-asrs-secret-key-2026")
 app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "static", "fotos")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
@@ -23,9 +27,23 @@ LDAP_API = os.environ.get("LDAP_API", "http://10.107.194.110:8080/api/login-ldap
 db.init_db()
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-
 # Usuario único autorizado para borrado de inspecciones
 BORRADO_AUTORIZADO = "ac17157"
+
+
+def procesar_y_guardar_foto(file_obj, upload_folder, name):
+    """Redimensiona y comprime la foto para optimizar ancho de banda y almacenamiento."""
+    target_path = os.path.join(upload_folder, name)
+    try:
+        img = Image.open(file_obj)
+        img = ImageOps.exif_transpose(img)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        img.thumbnail((1280, 1280), Image.Resampling.LANCZOS)
+        img.save(target_path, "JPEG", quality=82, optimize=True)
+    except Exception:
+        file_obj.seek(0)
+        file_obj.save(target_path)
 
 
 def ldap_autenticar(username, password):
@@ -64,7 +82,6 @@ def login():
     if not result["ok"]:
         return jsonify({"ok": False, "error": result["error"]}), 401
 
-    # Privilegio de borrado exclusivo para AC17157 (independiente del LDAP)
     puede_borrar = username == BORRADO_AUTORIZADO
 
     session["username"] = result["username"]
@@ -81,7 +98,6 @@ def logout():
 
 @app.route("/inspeccion", methods=["GET", "POST"])
 def inspeccion():
-    # Fecha y hora tomadas directamente del servidor (no modificables por el usuario)
     now = datetime.now()
     fecha_servidor = now.strftime("%Y-%m-%d")
     hora_servidor = now.strftime("%H:%M")
@@ -90,8 +106,8 @@ def inspeccion():
         data = {
             "operario": request.form.get("operario", "").strip(),
             "turno": request.form.get("turno", "").strip(),
-            "fecha": fecha_servidor,  # Ignora la fecha que envía el navegador
-            "area": request.form.get("area", "").strip(),
+            "fecha": fecha_servidor,
+            "area": request.form.get("area", "ASRS").strip(),
             "observaciones": request.form.get("observaciones", "").strip(),
         }
         puntos = {}
@@ -104,11 +120,8 @@ def inspeccion():
         files = request.files.getlist("fotos")
         for f in files:
             if f and f.filename:
-                ext = os.path.splitext(f.filename)[1] or ".jpg"
-                if ext.lower() not in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic"):
-                    ext = ".jpg"
-                name = f"{uuid.uuid4().hex}{ext}"
-                f.save(os.path.join(app.config["UPLOAD_FOLDER"], name))
+                name = f"{uuid.uuid4().hex}.jpg"
+                procesar_y_guardar_foto(f, app.config["UPLOAD_FOLDER"], name)
                 fotos.append(name)
         data["fotos"] = fotos
 
@@ -126,17 +139,87 @@ def exito():
 @app.route("/dashboard")
 def dashboard():
     stats = db.estadisticas()
-    return render_template("dashboard.html", stats=stats,
-                           puede_borrar=session.get("puede_borrar", False),
-                           username=session.get("username", ""))
+    return render_template(
+        "dashboard.html",
+        stats=stats,
+        puede_borrar=session.get("puede_borrar", False),
+        username=session.get("username", ""),
+    )
 
 
 @app.route("/borrar/<int:inspeccion_id>", methods=["POST"])
 def borrar(inspeccion_id):
     if session.get("username") != BORRADO_AUTORIZADO:
         return jsonify({"ok": False, "error": "Acceso denegado. Solo AC17157 puede borrar inspecciones."}), 403
-    db.borrar_inspeccion(inspeccion_id)
+    
+    fotos_a_borrar = db.borrar_inspeccion(inspeccion_id)
+    for foto in fotos_a_borrar:
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], foto)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
     return jsonify({"ok": True})
+
+
+@app.route("/exportar-csv")
+def exportar_csv():
+    registros = db.obtener_todas_inspecciones()
+
+    def generate():
+        data = io.StringIO()
+        writer = csv.writer(data)
+        writer.writerow([
+            "ID", "Fecha", "Turno", "Area", "Operario",
+            "Escritorio Limpio", "Piso Limpio", "Mueble Repuestos", "Sin Repuestos Mesón/Piso",
+            "Observaciones", "Cantidad Fotos"
+        ])
+        yield data.getvalue()
+        data.seek(0)
+        data.truncate(0)
+
+        for r in registros:
+            puntos = r.get("puntos", {})
+            writer.writerow([
+                r.get("id"),
+                r.get("fecha"),
+                r.get("turno"),
+                r.get("area", "ASRS"),
+                r.get("operario"),
+                puntos.get("Escritorio", ""),
+                puntos.get("Piso", ""),
+                puntos.get("MuebleRepuestos", ""),
+                puntos.get("SinRepuestos", ""),
+                r.get("observaciones", ""),
+                len(r.get("fotos_list", []))
+            ])
+            yield data.getvalue()
+            data.seek(0)
+            data.truncate(0)
+
+    filename = f"inspecciones_wpo_goodyear_{datetime.now().strftime('%Y%m%d')}.csv"
+    response = app.response_class(generate(), mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+
+@app.route("/qr")
+def qr_page():
+    host_url = request.host_url.rstrip("/")
+    target_url = f"{host_url}/inspeccion"
+    return render_template("qr.html", target_url=target_url)
+
+
+@app.route("/qr.png")
+def qr_image():
+    host_url = request.host_url.rstrip("/")
+    target_url = f"{host_url}/inspeccion"
+    img = qrcode.make(target_url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return send_file(buf, mimetype="image/png")
 
 
 @app.route("/fotos/<path:filename>")

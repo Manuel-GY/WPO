@@ -4,17 +4,17 @@
             <img class="logo-img" src="{{ url_for('static', filename='img/goodyear.svg') }}" alt="Goodyear">
             <span class="brand-text">
                 <span class="logo-sub til">Entrega de Turno</span>
-                <span class="logo-sub">Inspección de Entrega de Turno</span>
+                <span class="logo-sub">Inspección WPO · ASRS</span>
             </span>
         </a>
         <div class="nav-flex">
             <nav class="topnav">
                 <a href="{{ url_for('inspeccion') }}" class="nav-form">Formulario</a>
                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('qr_page') }}" title="Código QR Imprimible">Código QR</a>
             </nav>
             <!-- Botón de acceso discreto -->
-            <button class="login-icon" onclick="abrirLogin()" title="Acceso de administración"
-                    onmouseover="this.title='Acceso'">
+            <button class="login-icon" onclick="abrirLogin()" title="Acceso de administración LDAP">
                 {% if session.get('username') %}
                     <span class="dot-on"></span>
                 {% else %}
@@ -25,7 +25,7 @@
     </div>
 </div>
 
-<!-- Modal de login -->
+<!-- Modal de login LDAP -->
 <div id="loginModal" class="modal hidden">
     <div class="modal-box">
         <div class="modal-head">
@@ -34,12 +34,12 @@
         </div>
         {% if session.get('username') %}
             <form onsubmit="cerrarSesion(event)">
-                <p class="subtitle small">Sesión iniciada: <strong>{{ session.get('username') }}</strong></p>
+                <p class="subtitle small">Sesión activa: <strong>{{ session.get('username') }}</strong> ({{ session.get('full_name') }})</p>
                 <button type="submit" class="btn block">Cerrar sesión</button>
             </form>
         {% else %}
             <form id="loginForm" onsubmit="handleLogin(event)">
-                <label>Usuario LDAP
+                <label>Usuario LDAP (ej. AC17157)
                     <input type="text" id="ldapUser" required placeholder="usuario">
                 </label>
                 <label>Contraseña

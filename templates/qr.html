@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Código QR - Inspección WPO | Goodyear</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .qr-card {
+            max-width: 480px;
+            margin: 20px auto;
+            text-align: center;
+            background: #ffffff;
+            border: 2px solid var(--border);
+            border-radius: 24px;
+            padding: 36px 24px;
+            box-shadow: var(--shadow-lg);
+        }
+        .qr-img {
+            width: 240px;
+            height: 240px;
+            margin: 20px auto;
+            display: block;
+            border: 8px solid #f8fafc;
+            border-radius: 16px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        }
+        .url-box {
+            background: #f1f5f9;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #334155;
+            word-break: break-all;
+            margin: 14px 0;
+        }
+        @media print {
+            .topbar, .actions-print { display: none !important; }
+            body { background: #fff !important; }
+            .qr-card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+        }
+    </style>
+</head>
+<body>
+    {% include '_header.html' %}
+    <div class="container center">
+        <div class="qr-card">
+            <img src="{{ url_for('static', filename='img/goodyear.svg') }}" alt="Goodyear" style="height: 48px; margin-bottom: 12px;">
+            <h2 style="font-size: 1.4rem; color: #0f172a; margin-bottom: 4px;">Inspección de Entrega de Turno ASRS</h2>
+            <p class="subtitle small" style="margin-bottom: 8px;">Escanea este código QR con la cámara de tu celular para registrar la inspección WPO</p>
+            
+            <img class="qr-img" src="{{ url_for('qr_image') }}" alt="Código QR WPO">
+            
+            <div class="url-box">{{ target_url }}</div>
+            
+            <div class="actions-print actions" style="margin-top: 20px;">
+                <button onclick="window.print()" class="btn gy-yellow">🖨️ Imprimir cartel QR</button>
+                <a href="{{ url_for('inspeccion') }}" class="btn secondary">Ir al formulario</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

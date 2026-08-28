@@ -1,79 +1,117 @@
-# WPO - Inspección de Entrega de Turno ASRS
+# 🏭 WPO - Inspección de Entrega de Turno ASRS (Goodyear)
 
-Plataforma web para realizar inspecciones de **WPO** (Work Place Organization) en la entrega de turno del sistema **ASRS** de Goodyear.
+Plataforma web de nivel empresarial para el registro, seguimiento y auditoría de **WPO** (*Work Place Organization* / 5S) en la entrega de turno del sistema automatizado **ASRS** de Goodyear.
 
-## 🚀 Funcionalidades
+---
 
-- **Formulario móvil**: Registro de:
-  - Nombre del operador
-  - Turno (A / B / C / D)
-  - Fecha y hora (tomadas automáticamente del servidor, no modificables)
-  - Puntos de inspección (escritorio limpio, piso limpio, mueble de repuestos ordenado, sin repuestos en mesón o piso)
-  - Comentarios / observaciones
-  - **Registro fotográfico** desde la cámara o galería del celular
-- **Dashboard de estadísticas**:
-  - Total de inspecciones
-  - Inspecciones del mes
-  - Distribución por turno
-  - Historial con fotos y detalle de cada punto
-- **Login LDAP corporativo**: Autenticación contra el directorio de la planta vía la API de backend existente, mediante un botón discreto en la barra superior.
-- **Borrado autorizado**: Solo el usuario autorizado (`AC17157`) puede eliminar inspecciones de prueba.
+## 🚀 Funcionalidades Principales
 
-## 🧰 Tecnologías
+- 📱 **Formulario Móvil Guiado**:
+  - Registro de operador y turno (`Turno A`, `Turno B`, `Turno C`, `Turno D`).
+  - **Fecha y hora inalterables**: Estampadas automáticamente por el servidor Python para garantizar la trazabilidad real.
+  - Evaluación de puntos clave WPO (Escritorio limpio, Piso limpio, Mueble de repuestos ordenado, Sin repuestos fuera de lugar).
+  - Captura y subida de evidencia fotográfica desde la cámara o galería del teléfono.
+- 🖼️ **Optimización de Multimedia (Pillow)**:
+  - Redimensión y compresión automática de fotografías en el backend a máx 1280px y formato JPEG optimizado (reduce el peso de fotos de 8MB a ~200KB sin pérdida perceptible).
+  - Corrección automática de orientación EXIF.
+  - **Limpieza de disco**: Eliminación automática de archivos físicos al borrar una inspección.
+- 📊 **Dashboard Analítico e Interactivo (Chart.js)**:
+  - **KPI de Cumplimiento Global (% OK)** y conteo de puntos aprobados vs evaluados.
+  - Gráficos interactivos de cumplimiento por turno y desglose de aprobaciones por punto de inspección.
+  - Historial completo con tarjetas de estado, comentarios y miniaturas.
+  - **Visor Lightbox en pantalla completa** para inspección detallada de evidencias fotográficas sin salir del dashboard.
+- 📥 **Exportación de Datos (CSV / Excel)**:
+  - Descarga directa de reportes consolidados en formato CSV (`/exportar-csv`) optimizados para Excel o auditorías de planta.
+- 🔲 **Cartel imprimible con Código QR (`/qr`)**:
+  - Vista generadora de código QR para imprimir y colocar físicamente en los puestos de trabajo ASRS, permitiendo a los operarios escanear el QR y abrir la app al instante.
+- 🔐 **Autenticación Corporativa LDAP**:
+  - Integración vía API REST con el directorio activo de la planta (`/api/login-ldap/`).
+  - Permisos diferenciados: Borrado autorizado exclusivo para el usuario administrador (`AC17157`).
 
-- **Backend**: Python + Flask
-- **Base de datos**: SQLite (archivo `inspecciones.db`)
-- **QR**: Librería `qrcode`
-- **Autenticación**: Integración con la API LDAP de la planta (`/api/login-ldap/`)
+---
 
-## 📁 Estructura
+## 🧰 Stack Tecnológico
 
-```
-├── app.py                  # Backend Flask (rutas, login LDAP, upload de fotos, registro)
-├── database.py             # Modelo y consultas SQLite
-├── requirements.txt        # Dependencias
-├── .gitignore              # Excluye BD, fotos y temporales
+- **Backend**: Python 3.9+ / Flask
+- **Procesamiento de Imágenes**: Pillow (`PIL`)
+- **Base de Datos**: SQLite3 (con gestión de context manager y auto-migración)
+- **Frontend**: HTML5, CSS3 moderno (Variables CSS, Grid, Flexbox, Glassmorphism), JavaScript ES6+
+- **Visualización de Datos**: Chart.js v4
+- **Generación QR**: Python `qrcode`
+
+---
+
+## 📁 Estructura del Proyecto
+
+```text
+wpo_inspecciones/
+├── app.py                  # Servidor principal Flask, rutas, lógica de compresión y autenticación
+├── database.py             # Modelo de base de datos, consultas SQL, métricas WPO y exportación
+├── requirements.txt        # Dependencias Python (Flask, Pillow, qrcode, requests)
+├── .gitignore              # Excluye BD, imágenes subidas y logs
 ├── static/
-│   ├── style.css           # Estilos premium
-│   ├── img/goodyear.svg    # Logo oficial Goodyear
-│   └── fotos/              # Imágenes subidas por los operadores
+│   ├── style.css           # Estilos corporativos Goodyear (Azul #003399, Amarillo #FFD200)
+│   ├── img/goodyear.svg    # Logotipo oficial Goodyear
+│   └── fotos/              # Directorio de fotos comprimidas
 └── templates/
-    ├── _header.html        # Barra superior con logo, navegación y login discreto
-    ├── formulario.html     # Formulario de inspección (fecha/hora automática)
-    ├── dashboard.html      # Estadísticas e historial (con borrado para AC17157)
-    └── exito.html          # Confirmación de registro
+    ├── _header.html        # Barra superior, navegación y modal de login LDAP
+    ├── formulario.html     # Formulario de inspección adaptado a dispositivos móviles
+    ├── dashboard.html      # Dashboard analítico con Chart.js y visor Lightbox
+    ├── qr.html             # Cartel imprimible de código QR para la estación ASRS
+    └── exito.html          # Confirmación de registro de inspección
 ```
 
-## 💻 Ejecución en local
+---
+
+## 🛠️ Instalación y Ejecución
+
+### 1. Clonar el repositorio e instalar dependencias
 
 ```bash
-# 1. Instalar dependencias
+git clone https://github.com/Manuel-GY/WPO.git
+cd WPO
 pip install -r requirements.txt
+```
 
-# 2. Ejecutar la aplicación
+### 2. Ejecutar la aplicación
+
+```bash
 python app.py
 ```
 
-Abrir en el navegador: `http://127.0.0.1:5000/`
+La aplicación se ejecutará por defecto en `http://127.0.0.1:5000/`.
 
-Para acceder desde el celular (misma red Wi-Fi): usar la IP local del equipo, p. ej. `http://<ip-de-tu-pc>:5000/`
+Para acceder desde teléfonos móviles o colectores de datos en la misma red Wi-Fi de la planta, utiliza la IP local del equipo: `http://<IP-DE-TU-SERVIDOR>:5000/`
 
-> La página principal redirige al **Dashboard**. El **formulario** (lo que llenan los operarios) está en `http://<servidor>/inspeccion`.
+---
 
-## 🔐 Configuración del login LDAP
+## 🗺️ Mapa de Rutas de la Aplicación
 
-La autenticación se realiza contra la API LDAP de la planta:
+| Ruta | Método | Descripción |
+| :--- | :--- | :--- |
+| `/` | GET | Redirige al Dashboard principal |
+| `/inspeccion` | GET / POST | Formulario móvil de entrega de turno WPO |
+| `/dashboard` | GET | Dashboard analítico, KPIs y tabla de historial |
+| `/exportar-csv` | GET | Descarga de reporte acumulado en CSV |
+| `/qr` | GET | Cartel listo para imprimir con el Código QR del puesto |
+| `/qr.png` | GET | Endpoint dinámico generador del PNG del QR |
+| `/login` | POST | Autenticación de usuario contra el servicio LDAP corporativo |
+| `/logout` | POST | Cierre de sesión de usuario |
+| `/borrar/<id>` | POST | Borrado seguro de registro y fotos (Exclusivo `AC17157`) |
 
-```python
-# app.py
-LDAP_API = os.environ.get("LDAP_API", "http://10.107.194.110:8080/api/login-ldap/")
-BORRADO_AUTORIZADO = "ac17157"   # Único usuario autorizado para borrar
+---
+
+## ⚙️ Variables de Entorno (Opcional)
+
+Puedes configurar las siguientes variables de entorno para entornos de producción:
+
+```bash
+export SECRET_KEY="tu-clave-secreta-de-produccion"
+export LDAP_API="http://10.107.194.110:8080/api/login-ldap/"
 ```
 
-## 📌 Notas
+---
 
-- La **fecha y hora** de cada inspección se toman automáticamente del servidor y no pueden modificarse desde el formulario.
-- El **login de administración** se accede mediante un pequeño botón discreto (candado) en la barra superior.
-- El registro fotográfico se guarda en `static/fotos/` (excluido del control de versiones).
-- La base de datos (`inspecciones.db`) se crea automáticamente al arrancar y no se sube al repositorio.
-- Desarrollado para **Mantenimiento e Ingeniería de Automatización – Goodyear**.
+## 📌 Desarrollo
+
+Desarrollado para la **Jefatura de Mantenimiento e Ingeniería de Automatización – Goodyear Chile**.

@@ -3,20 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Inspecciones | Goodyear</title>
+    <title>Dashboard WPO | Goodyear ASRS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     {% include '_header.html' %}
     <div class="container">
         <div class="dash-head">
-            <h1>Dashboard de Inspecciones <span class="accent">WPO</span></h1>
-            {% if puede_borrar %}
-                <span class="nav-user">Sesión: {{ username }}</span>
-            {% endif %}
+            <div>
+                <h1>Dashboard de Inspecciones <span class="accent">WPO</span></h1>
+                <p class="subtitle small">Control de Calidad y Organización en Entrega de Turno ASRS</p>
+            </div>
+            <div class="dash-actions">
+                <a href="{{ url_for('exportar_csv') }}" class="btn secondary small-btn">📥 Exportar CSV / Excel</a>
+                <a href="{{ url_for('qr_page') }}" class="btn gy-yellow small-btn">🔲 Generar QR</a>
+            </div>
         </div>
 
         <div class="kpis">
@@ -26,114 +31,241 @@
             </div>
             <div class="kpi">
                 <span class="kpi-num">{{ stats.total_mes }}</span>
-                <span class="kpi-label">Este mes</span>
+                <span class="kpi-label">Inspecciones este mes</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-num {% if stats.cumplimiento_global >= 90 %}text-good{% elif stats.cumplimiento_global >= 75 %}text-warn{% else %}text-bad{% endif %}">
+                    {{ stats.cumplimiento_global }}%
+                </span>
+                <span class="kpi-label">Cumplimiento WPO Global</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-num">{{ stats.total_cumplidos }} / {{ stats.total_evaluados }}</span>
+                <span class="kpi-label">Puntos Aprobados</span>
             </div>
         </div>
 
-        <div class="grid-2">
+        <!-- Sección de Gráficos Interactivos -->
+        <div class="grid-2" style="margin-bottom: 24px;">
             <section class="card">
-                <h2>Inspecciones por mes</h2>
-                {% if stats.por_mes %}
-                <table>
-                    <thead><tr><th>Mes</th><th>Inspecciones</th></tr></thead>
-                    <tbody>
-                    {% for mes, num in stats.por_mes.items() %}
-                        <tr><td>{{ mes }}</td><td>{{ num }}</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p>Sin datos.</p>
-                {% endif %}
+                <h2>Cumplimiento por Turno (%)</h2>
+                <div class="chart-container">
+                    <canvas id="chartTurnos"></canvas>
+                </div>
             </section>
 
             <section class="card">
-                <h2>Por turno</h2>
-                {% if stats.por_turno %}
-                <table>
-                    <thead><tr><th>Turno</th><th>Cantidad</th></tr></thead>
-                    <tbody>
-                    {% for turno, num in stats.por_turno.items() %}
-                        <tr><td>{{ turno }}</td><td>{{ num }}</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p>Sin datos.</p>
-                {% endif %}
+                <h2>Estado por Punto WPO</h2>
+                <div class="chart-container">
+                    <canvas id="chartPuntos"></canvas>
+                </div>
             </section>
         </div>
 
+        <!-- Tabla Historial -->
         <section class="card">
-            <h2>Historial de inspecciones (últimas 20)</h2>
-            {% if puede_borrar %}
-            <p class="subtitle small">Modo administrador ({{ username }}): puedes borrar inspecciones de prueba. Las filas con foto no podrán eliminarse si quieres preservarlas.</p>
-            {% endif %}
+            <div class="table-head-flex">
+                <h2>Historial de inspecciones</h2>
+                {% if puede_borrar %}
+                <span class="badge-admin">Modo Admin Activo ({{ username }})</span>
+                {% endif %}
+            </div>
+
             {% if stats.registros %}
-            <table class="full">
-                <thead>
-                    <tr><th>Fecha</th><th>Turno</th><th>Operador</th><th>Puntos</th><th>Comentarios</th><th>Fotos</th>{% if puede_borrar %}<th>Acciones</th>{% endif %}</tr>
-                </thead>
-                <tbody>
-                {% for r in stats.registros[:20] %}
-                    <tr>
-                        <td>{{ r.fecha }}</td>
-                        <td>{{ r.turno }}</td>
-                        <td>{{ r.operario }}</td>
-                        <td class="puntos-cell">
-                            {% if r.puntos %}
-                                {% for k, v in r.puntos.items() %}
-                                    <div><span class="{{ 'good' if v == 'Sí' else 'bad' }}">{{ k }}: {{ v }}</span></div>
+            <div class="table-responsive">
+                <table class="full">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Turno</th>
+                            <th>Operador</th>
+                            <th>Evaluación Puntos WPO</th>
+                            <th>Comentarios</th>
+                            <th>Evidencia Fotográfica</th>
+                            {% if puede_borrar %}<th>Acciones</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for r in stats.registros %}
+                        <tr>
+                            <td class="muted">#{{ r.id }}</td>
+                            <td><strong>{{ r.fecha }}</strong></td>
+                            <td><span class="badge-turno turno-{{ r.turno }}">{{ r.turno }}</span></td>
+                            <td>{{ r.operario }}</td>
+                            <td class="puntos-cell">
+                                {% if r.puntos %}
+                                    <div class="puntos-grid">
+                                    {% for k, v in r.puntos.items() %}
+                                        <span class="chip {{ 'good' if v == 'Sí' else 'bad' }}">
+                                            {{ '✓' if v == 'Sí' else '✕' }} {{ k }}
+                                        </span>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="obs-cell">{{ r.observaciones or '—' }}</td>
+                            <td>
+                                <div class="thumbs-flex">
+                                {% for f in r.fotos_list %}
+                                    <img class="thumb small" src="{{ url_for('fotos', filename=f) }}" 
+                                         onclick="abrirLightbox('{{ url_for('fotos', filename=f) }}')" 
+                                         alt="Evidencia fotográfica" title="Clic para ampliar">
                                 {% endfor %}
-                            {% else %}
-                                <span class="muted">—</span>
+                                {% if not r.fotos_list %}<span class="muted" style="font-size: 0.8rem;">Sin fotos</span>{% endif %}
+                                </div>
+                            </td>
+                            {% if puede_borrar %}
+                            <td>
+                                <button class="btn-del" onclick="borrarInspeccion({{ r.id }}, this)">Borrar</button>
+                            </td>
                             {% endif %}
-                        </td>
-                        <td>{{ r.observaciones or '' }}</td>
-                        <td>
-                            {% for f in r.fotos_list %}
-                                <a href="{{ url_for('fotos', filename=f) }}" target="_blank">
-                                    <img class="thumb small" src="{{ url_for('fotos', filename=f) }}" alt="foto">
-                                </a>
-                            {% endfor %}
-                        </td>
-                        {% if puede_borrar %}
-                        <td>
-                            <button class="btn-del" onclick="borrarInspeccion({{ r.id }}, this)">Borrar</button>
-                        </td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
-            <p>Sin registros todavía. Completa el formulario de inspección para comenzar.</p>
+            <p style="text-align: center; color: var(--muted); padding: 30px 0;">No hay inspecciones registradas aún. Los operadores pueden registrar la primera usando el formulario.</p>
             {% endif %}
         </section>
     </div>
 
+    <!-- Modal Lightbox para Visor de Fotos -->
+    <div id="lightboxModal" class="modal hidden" onclick="cerrarLightbox()">
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <button class="modal-close lightbox-close" onclick="cerrarLightbox()">&times;</button>
+            <img id="lightboxImg" src="" alt="Vista ampliada">
+        </div>
+    </div>
+
     <script>
+        // Modal Lightbox de fotos
+        function abrirLightbox(src) {
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('lightboxModal').classList.remove('hidden');
+        }
+        function cerrarLightbox() {
+            document.getElementById('lightboxModal').classList.add('hidden');
+            document.getElementById('lightboxImg').src = '';
+        }
+
+        // Borrar Inspección AJAX
         async function borrarInspeccion(id, btn) {
-            if (!confirm('¿Seguro que deseas borrar la inspección #' + id + '? Esta acción no se puede deshacer.')) return;
+            if (!confirm('¿Confirmas que deseas eliminar permanentemente la inspección #' + id + ' y sus fotos asociadas?')) return;
             btn.disabled = true;
             btn.textContent = '...';
             try {
                 const res = await fetch('/borrar/' + id, { method: 'POST' });
                 const data = await res.json();
                 if (data.ok) {
-                    btn.closest('tr').style.opacity = '0.3';
-                    btn.closest('tr').remove();
+                    const row = btn.closest('tr');
+                    row.style.transition = 'all 0.3s ease';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
                 } else {
                     alert(data.error || 'No se pudo borrar.');
                     btn.disabled = false;
                     btn.textContent = 'Borrar';
                 }
             } catch (e) {
-                alert('Error al borrar.');
+                alert('Error de conexión al intentar borrar.');
                 btn.disabled = false;
                 btn.textContent = 'Borrar';
             }
         }
+
+        // Renderizado de Gráficos Chart.js
+        document.addEventListener("DOMContentLoaded", function () {
+            // Gráfico 1: Cumplimiento por Turno (%)
+            const ctxTurnos = document.getElementById('chartTurnos').getContext('2d');
+            const dataTurnos = {{ stats.por_turno | tojson }};
+            const labelsTurnos = Object.keys(dataTurnos);
+            const pctTurnos = labelsTurnos.map(t => dataTurnos[t].pct);
+            const cantTurnos = labelsTurnos.map(t => dataTurnos[t].total);
+
+            new Chart(ctxTurnos, {
+                type: 'bar',
+                data: {
+                    labels: labelsTurnos.map(t => 'Turno ' + t),
+                    datasets: [
+                        {
+                            label: '% Cumplimiento',
+                            data: pctTurnos,
+                            backgroundColor: 'rgba(0, 51, 153, 0.85)',
+                            borderColor: '#003399',
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Total Inspecciones',
+                            data: cantTurnos,
+                            backgroundColor: 'rgba(255, 210, 0, 0.85)',
+                            borderColor: '#e6bd00',
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: { display: true, text: '% Cumplimiento' }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Cantidad' }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico 2: Cumplimiento por Punto de Inspección
+            const ctxPuntos = document.getElementById('chartPuntos').getContext('2d');
+            const dataPuntos = {{ stats.por_punto | tojson }};
+            const labelsPuntos = Object.keys(dataPuntos).map(k => dataPuntos[k].nombre);
+            const siPuntos = Object.keys(dataPuntos).map(k => dataPuntos[k].si);
+            const noPuntos = Object.keys(dataPuntos).map(k => dataPuntos[k].no);
+
+            new Chart(ctxPuntos, {
+                type: 'bar',
+                data: {
+                    labels: labelsPuntos,
+                    datasets: [
+                        {
+                            label: 'Cumple (Sí)',
+                            data: siPuntos,
+                            backgroundColor: '#22c55e',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'No cumple (No)',
+                            data: noPuntos,
+                            backgroundColor: '#ef4444',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inspección registrada | Goodyear</title>
+    <title>Inspección Registrada | Goodyear</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,12 +11,23 @@
 </head>
 <body>
     {% include '_header.html' %}
-    <div class="container center">
-        <div class="success-icon">&#10004;</div>
-        <h1>¡Inspección registrada!</h1>
-        <p>Gracias por completar la inspección de entrega de turno.</p>
-        {% if n > 0 %}<p class="subtitle">{{ n }} foto(s) adjuntada(s) correctamente.</p>{% endif %}
-        <a class="btn" href="{{ url_for('inspeccion') }}">Realizar otra inspección</a>
+    <div class="container center" style="max-width: 600px; padding-top: 50px;">
+        <div class="card" style="padding: 40px 24px;">
+            <div class="success-icon">✓</div>
+            <h1 style="margin-top: 10px;">¡Inspección Registrada!</h1>
+            <p class="subtitle" style="margin-bottom: 12px;">La inspección de entrega de turno WPO (ASRS) se guardó correctamente en el sistema.</p>
+            
+            {% if n > 0 %}
+                <div class="badge-ok" style="font-size: 0.9rem; padding: 6px 16px; margin-bottom: 24px; display: inline-block;">
+                    📸 {{ n }} foto(s) optimizada(s) y adjuntada(s)
+                </div>
+            {% endif %}
+
+            <div class="actions" style="margin-top: 24px;">
+                <a class="btn gy-yellow" href="{{ url_for('inspeccion') }}">➕ Realizar otra inspección</a>
+                <a class="btn secondary" href="{{ url_for('dashboard') }}">📊 Ir al Dashboard</a>
+            </div>
+        </div>
     </div>
 </body>
 </html>

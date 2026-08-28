@@ -1,15 +1,16 @@
-# 🏭 WPO - Inspección de Entrega de Turno ASRS (Goodyear)
+# 🏭 Goodyear - Plataforma de Control 5S / WPO
 
-Plataforma web de nivel empresarial para el registro, seguimiento y auditoría de **WPO** (*Work Place Organization* / 5S) en la entrega de turno del sistema automatizado **ASRS** de Goodyear.
+Plataforma web corporativa para el registro, seguimiento y auditoría de **5S / WPO** (*Work Place Organization*) en la entrega de turno a nivel de planta en Goodyear.
 
 ---
 
 ## 🚀 Funcionalidades Principales
 
 - 📱 **Formulario Móvil Guiado**:
-  - Registro de operador y turno (`Turno A`, `Turno B`, `Turno C`, `Turno D`).
+  - Registro por área de la planta (`ASRS`, `Banbury`, `Confección`, `Curado`, `Inspección Final`, `Almacén`, `Mantenimiento`, `General`).
+  - Identificación dual con **Usuario LDAP** (ej. `ACXXXXX`) y **Nombre Completo del Operador**.
   - **Fecha y hora inalterables**: Estampadas automáticamente por el servidor Python para garantizar la trazabilidad real.
-  - Evaluación de puntos clave WPO (Escritorio limpio, Piso limpio, Mueble de repuestos ordenado, Sin repuestos fuera de lugar).
+  - Evaluación de puntos clave 5S / WPO (Escritorio limpio, Piso limpio, Mueble de repuestos ordenado, Sin repuestos fuera de lugar).
   - Captura y subida de evidencia fotográfica desde la cámara o galería del teléfono.
 - 🖼️ **Optimización de Multimedia (Pillow)**:
   - Redimensión y compresión automática de fotografías en el backend a máx 1280px y formato JPEG optimizado (reduce el peso de fotos de 8MB a ~200KB sin pérdida perceptible).
@@ -43,7 +44,7 @@ Plataforma web de nivel empresarial para el registro, seguimiento y auditoría d
 ```text
 wpo_inspecciones/
 ├── app.py                  # Servidor principal Flask, rutas, lógica de compresión y autenticación
-├── database.py             # Modelo de base de datos, consultas SQL, métricas WPO y exportación
+├── database.py             # Modelo de base de datos, consultas SQL, métricas 5S/WPO y exportación
 ├── requirements.txt        # Dependencias Python (Flask, Pillow, requests)
 ├── .gitignore              # Excluye BD, imágenes subidas y logs
 ├── static/
@@ -54,7 +55,7 @@ wpo_inspecciones/
     ├── _header.html        # Barra superior, navegación y modal de login LDAP
     ├── formulario.html     # Formulario de inspección adaptado a dispositivos móviles
     ├── dashboard.html      # Dashboard analítico con Chart.js y visor Lightbox
-    └── exito.html          # Confirmación de registro de inspección
+    └── exito.html          # Redirección directa al Dashboard
 ```
 
 ---
@@ -86,7 +87,7 @@ Para acceder desde teléfonos móviles o colectores de datos en la misma red Wi-
 | Ruta | Método | Descripción |
 | :--- | :--- | :--- |
 | `/` | GET | Redirige al Dashboard principal |
-| `/inspeccion` | GET / POST | Formulario móvil de entrega de turno WPO |
+| `/inspeccion` | GET / POST | Formulario móvil de entrega de turno 5S / WPO |
 | `/dashboard` | GET | Dashboard analítico, KPIs y tabla de historial |
 | `/exportar-csv` | GET | Descarga de reporte acumulado en CSV |
 | `/login` | POST | Autenticación de usuario contra el servicio LDAP corporativo |

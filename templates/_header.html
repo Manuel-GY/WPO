@@ -3,8 +3,8 @@
         <a class="brand" href="{{ url_for('dashboard') }}">
             <img class="logo-img" src="{{ url_for('static', filename='img/goodyear.svg') }}" alt="Goodyear">
             <span class="brand-text">
-                <span class="logo-sub til">Entrega de Turno</span>
-                <span class="logo-sub">Inspección WPO · ASRS</span>
+                <span class="logo-sub til">Plataforma 5S / WPO</span>
+                <span class="logo-sub">Control de Entrega de Turno</span>
             </span>
         </a>
         <div class="nav-flex">
@@ -38,7 +38,7 @@
             </form>
         {% else %}
             <form id="loginForm" onsubmit="handleLogin(event)">
-                <label>Usuario LDAP (ej. AC17157)
+                <label>Usuario LDAP (ej. ACXXXXX)
                     <input type="text" id="ldapUser" required placeholder="usuario">
                 </label>
                 <label>Contraseña

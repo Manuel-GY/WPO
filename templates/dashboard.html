@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard WPO | Goodyear ASRS</title>
+    <title>Dashboard - Plataforma de Control 5S / WPO | Goodyear</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -23,8 +23,8 @@
 
         <div class="dash-head">
             <div>
-                <h1>Dashboard de Inspecciones <span class="accent">WPO</span></h1>
-                <p class="subtitle small">Control de Calidad y Organización en Entrega de Turno ASRS</p>
+                <h1>Dashboard de Inspecciones <span class="accent">5S / WPO</span></h1>
+                <p class="subtitle small">Control de Calidad y Organización en Entrega de Turno</p>
             </div>
             <div class="dash-actions">
                 <a href="{{ url_for('exportar_csv') }}" class="btn secondary small-btn">📥 Exportar CSV / Excel</a>
@@ -62,7 +62,7 @@
             </section>
 
             <section class="card">
-                <h2>Estado por Punto WPO</h2>
+                <h2>Estado por Punto 5S / WPO</h2>
                 <div class="chart-container">
                     <canvas id="chartPuntos"></canvas>
                 </div>
@@ -86,8 +86,9 @@
                             <th>ID</th>
                             <th>Fecha</th>
                             <th>Turno</th>
+                            <th>Área</th>
                             <th>Operador (User LDAP)</th>
-                            <th>Evaluación Puntos WPO</th>
+                            <th>Evaluación Puntos 5S / WPO</th>
                             <th>Comentarios</th>
                             <th>Evidencia Fotográfica</th>
                             {% if puede_borrar %}<th>Acciones</th>{% endif %}
@@ -99,6 +100,7 @@
                             <td class="muted">#{{ r.id }}</td>
                             <td><strong>{{ r.fecha }}</strong></td>
                             <td><span class="badge-turno turno-{{ r.turno }}">{{ r.turno }}</span></td>
+                            <td><span class="badge-turno" style="background:#f1f5f9; color:#475569;">{{ r.area or 'General' }}</span></td>
                             <td>
                                 <strong>{{ r.operario }}</strong>
                                 {% if r.usuario_ldap %}

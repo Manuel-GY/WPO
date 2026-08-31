@@ -2,15 +2,20 @@ import os
 import json
 import sqlite3
 from datetime import datetime
+from contextlib import contextmanager
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "inspecciones.db")
 
 
+@contextmanager
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 def init_db():
@@ -40,12 +45,10 @@ def init_db():
 
 def guardar_inspeccion(data):
     puntos_json = json_dumps(data.get("puntos", {}))
-    fotos_l = data.get("fotos", [])
-    fotos_json = json_dumps(fotos_l)
     with get_db() as conn:
         cur = conn.execute(
-            """INSERT INTO inspecciones (fecha, turno, area, usuario_ldap, operario, observaciones, puntos, fotos)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO inspecciones (fecha, turno, area, usuario_ldap, operario, observaciones, puntos)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
                 data.get("fecha"),
                 data.get("turno"),
@@ -54,7 +57,6 @@ def guardar_inspeccion(data):
                 data.get("operario"),
                 data.get("observaciones"),
                 puntos_json,
-                fotos_json,
             ),
         )
         conn.commit()
@@ -69,16 +71,10 @@ def total_inspecciones():
 
 
 def borrar_inspeccion(inspeccion_id):
-    """Elimina el registro de la BD y devuelve la lista de nombres de fotos a borrar del disco."""
-    fotos_a_borrar = []
+    """Elimina el registro de la BD."""
     with get_db() as conn:
-        cur = conn.execute("SELECT fotos FROM inspecciones WHERE id = ?", (inspeccion_id,))
-        row = cur.fetchone()
-        if row and row["fotos"]:
-            fotos_a_borrar = json_loads(row["fotos"])
         conn.execute("DELETE FROM inspecciones WHERE id = ?", (inspeccion_id,))
         conn.commit()
-    return fotos_a_borrar
 
 
 def json_dumps(obj):
@@ -100,7 +96,6 @@ def obtener_todas_inspecciones():
     registros = [dict(r) for r in filas]
     for r in registros:
         r["puntos"] = json_loads(r.get("puntos", ""))
-        r["fotos_list"] = json_loads(r.get("fotos", ""))
     return registros
 
 

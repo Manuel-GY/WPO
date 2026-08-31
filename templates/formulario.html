@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario - Plataforma de Control 5S / WPO | Goodyear</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/goodyear.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -155,19 +155,7 @@
             </section>
 
             <section class="card">
-                <h2>3. Evidencia Fotográfica (Opcional)</h2>
-                <p class="subtitle small">Toma fotos directamente con la cámara del colector o adjunta desde el dispositivo.</p>
-                <div class="file-upload-wrapper">
-                    <input type="file" name="fotos" id="fotosInput" accept="image/*" capture="environment" multiple class="photos-upload-hidden">
-                    <label for="fotosInput" class="btn secondary block-upload">
-                        📸 Tomar foto / Seleccionar imágenes
-                    </label>
-                </div>
-                <div id="previstas" class="previstas-grid"></div>
-            </section>
-
-            <section class="card">
-                <h2>4. Observaciones / Comentarios</h2>
+                <h2>3. Observaciones / Comentarios</h2>
                 <textarea name="observaciones" rows="3" placeholder="Ingresa aquí detalles adicionales, pendientes para el siguiente turno o novedades de mantenimiento..."></textarea>
             </section>
 
@@ -253,35 +241,13 @@
             xhr.send(JSON.stringify({ username: user, password: pass }));
         }
 
-        // Preview de imágenes compatible
-        var fotosInput = document.getElementById('fotosInput');
-        if (fotosInput) {
-            fotosInput.onchange = function () {
-                var prev = document.getElementById('previstas');
-                if (!prev) return;
-                prev.innerHTML = '';
-                if (!fotosInput.files || fotosInput.files.length === 0) return;
-                
-                for (var j = 0; j < fotosInput.files.length; j++) {
-                    var f = fotosInput.files[j];
-                    if (window.URL && window.URL.createObjectURL) {
-                        var url = window.URL.createObjectURL(f);
-                        var item = document.createElement('div');
-                        item.className = 'thumb-preview-item';
-                        item.innerHTML = '<img src="' + url + '" class="thumb"><span class="thumb-name">' + f.name.substring(0, 15) + '...</span>';
-                        prev.appendChild(item);
-                    }
-                }
-            };
-        }
-
         var wpoForm = document.getElementById('wpoForm');
         if (wpoForm) {
             wpoForm.onsubmit = function () {
                 var btn = document.getElementById('submitBtn');
                 if (btn) {
                     btn.disabled = true;
-                    btn.innerHTML = 'Enviando e indexando fotos... ⏳';
+                    btn.innerHTML = 'Enviando registro... ⏳';
                 }
             };
         }

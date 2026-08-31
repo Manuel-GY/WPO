@@ -6,9 +6,9 @@
     <title>Dashboard - Plataforma de Control 5S / WPO | Goodyear</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/goodyear.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='chart.js') }}"></script>
 </head>
 <body>
     {% include '_header.html' %}
@@ -98,7 +98,6 @@
                             <th>Operador (User LDAP)</th>
                             <th>Evaluación Puntos 5S / WPO</th>
                             <th>Comentarios</th>
-                            <th>Evidencia Fotográfica</th>
                             {% if puede_borrar %}<th>Acciones</th>{% endif %}
                         </tr>
                     </thead>
@@ -129,16 +128,6 @@
                                 {% endif %}
                             </td>
                             <td class="obs-cell">{{ r.observaciones or '—' }}</td>
-                            <td>
-                                <div class="thumbs-flex">
-                                {% for f in r.fotos_list %}
-                                    <img class="thumb small" src="{{ url_for('fotos', filename=f) }}" 
-                                         onclick="abrirLightbox('{{ url_for('fotos', filename=f) }}')" 
-                                         alt="Evidencia fotográfica" title="Clic para ampliar">
-                                {% endfor %}
-                                {% if not r.fotos_list %}<span class="muted" style="font-size: 0.8rem;">Sin fotos</span>{% endif %}
-                                </div>
-                            </td>
                             {% if puede_borrar %}
                             <td>
                                 <button class="btn-del" onclick="borrarInspeccion({{ r.id }}, this)">Borrar</button>
@@ -155,28 +144,10 @@
         </section>
     </div>
 
-    <!-- Modal Lightbox para Visor de Fotos -->
-    <div id="lightboxModal" class="modal hidden" onclick="cerrarLightbox()">
-        <div class="lightbox-content" onclick="event.stopPropagation()">
-            <button class="modal-close lightbox-close" onclick="cerrarLightbox()">&times;</button>
-            <img id="lightboxImg" src="" alt="Vista ampliada">
-        </div>
-    </div>
-
     <script>
-        // Modal Lightbox de fotos
-        function abrirLightbox(src) {
-            document.getElementById('lightboxImg').src = src;
-            document.getElementById('lightboxModal').classList.remove('hidden');
-        }
-        function cerrarLightbox() {
-            document.getElementById('lightboxModal').classList.add('hidden');
-            document.getElementById('lightboxImg').src = '';
-        }
-
         // Borrar Inspección AJAX
         async function borrarInspeccion(id, btn) {
-            if (!confirm('¿Confirmas que deseas eliminar permanentemente la inspección #' + id + ' y sus fotos asociadas?')) return;
+            if (!confirm('¿Confirmas que deseas eliminar permanentemente la inspección #' + id + '?')) return;
             btn.disabled = true;
             btn.textContent = '...';
             try {

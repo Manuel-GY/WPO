@@ -18,8 +18,8 @@ Plataforma web corporativa para el registro, seguimiento y auditoría de **5S / 
 - 👤 **Identificación LDAP Corporativa**:
   - Validación con **Usuario LDAP** (ej. `ACXXXXX`) y **Contraseña**, obteniendo automáticamente el **Nombre Completo oficial** de la persona desde la API de la planta.
 - 🕒 **Fecha y hora inalterables**: Estampadas automáticamente por el servidor Python para garantizar la trazabilidad real.
-- 🖼️ **Optimización de Multimedia (Pillow)**:
-  - Redimensión y compresión automática de fotografías en el backend a máx 1280px y formato JPEG optimizado.
+- 🕒 **Fecha y hora inalterables**: Estampadas automáticamente por el servidor Python para garantizar la trazabilidad real.
+- ⚡ **Ligero y Optimizado**: Sin almacenamiento pesado de imágenes para maximizar la velocidad y ahorrar espacio en el servidor de la planta.
 - 📊 **Dashboard Analítico e Interactivo (Chart.js)**:
   - **KPI de Cumplimiento Global (% OK)** y conteo de puntos aprobados vs evaluados.
   - Gráficos interactivos de cumplimiento por turno y desglose por área.
@@ -31,7 +31,6 @@ Plataforma web corporativa para el registro, seguimiento y auditoría de **5S / 
 ## 🧰 Stack Tecnológico
 
 - **Backend**: Python 3.9+ / Flask
-- **Procesamiento de Imágenes**: Pillow (`PIL`)
 - **Generador de QR**: Python `qrcode`
 - **Base de Datos**: SQLite3 (con gestión de context manager y auto-migración)
 - **Frontend**: HTML5, CSS3 moderno (Variables CSS, Grid, Flexbox, Glassmorphism), JavaScript ES6+
@@ -43,18 +42,18 @@ Plataforma web corporativa para el registro, seguimiento y auditoría de **5S / 
 
 ```text
 wpo_inspecciones/
-├── app.py                  # Servidor principal Flask, rutas, lógica de compresión y autenticación
+├── app.py                  # Servidor principal Flask, rutas y autenticación
 ├── database.py             # Modelo de base de datos, consultas SQL, métricas 5S/WPO y exportación
-├── requirements.txt        # Dependencias Python (Flask, Pillow, qrcode, requests)
-├── .gitignore              # Excluye BD, imágenes subidas y logs
+├── requirements.txt        # Dependencias Python (Flask, qrcode, requests)
+├── .gitignore              # Excluye BD y logs
 ├── static/
 │   ├── style.css           # Estilos corporativos Goodyear (Azul #003399, Amarillo #FFD200)
-│   ├── img/goodyear.svg    # Logotipo oficial Goodyear
-│   └── fotos/              # Directorio de fotos comprimidas
+│   ├── chart.js            # Librería de gráficos local (100% Offline)
+│   └── img/goodyear.svg    # Logotipo oficial Goodyear
 └── templates/
     ├── _header.html        # Barra superior, navegación y modal de login LDAP
     ├── formulario.html     # Formulario de inspección adaptado a móviles y colectores industriales
-    ├── dashboard.html      # Dashboard analítico con Chart.js y visor Lightbox
+    ├── dashboard.html      # Dashboard analítico con Chart.js
     ├── qrs.html            # Catálogo imprimible de carteles QR para las 4 áreas
     └── exito.html          # Redirección directa al Dashboard
 ```
@@ -95,7 +94,7 @@ Para acceder desde colectores **Datalogic Falcon X4** o celulares en la red Wi-F
 | `/exportar-csv` | GET | Descarga de reporte acumulado en CSV |
 | `/login` | POST | Autenticación de usuario contra el servicio LDAP corporativo |
 | `/logout` | POST | Cierre de sesión de usuario |
-| `/borrar/<id>` | POST | Borrado seguro de registro y fotos (Exclusivo `AC17157`) |
+| `/borrar/<id>` | POST | Borrado seguro de registro (Exclusivo `AC17157`) |
 
 ---
 

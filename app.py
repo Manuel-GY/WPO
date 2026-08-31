@@ -9,7 +9,6 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, send_file
 import requests
 import qrcode
-from PIL import Image, ImageOps
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
@@ -19,17 +18,14 @@ import database as db
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "goodyear-wpo-5s-secret-key-2026")
-app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "static", "fotos")
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 # API LDAP corporativa de la planta (backend Django proxy al LDAP)
 LDAP_API = os.environ.get("LDAP_API", "http://10.107.194.110:8080/api/login-ldap/")
 
 db.init_db()
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-# Usuario único autorizado para borrado de inspecciones y ver QRs
-BORRADO_AUTORIZADO = "ac17157"
+# Usuario autorizado para borrado de inspecciones y ver QRs
+BORRADO_AUTORIZADO = os.environ.get("ADMIN_USER", "ac17157").strip().lower()
 
 
 def es_colector_o_movil(user_agent_str):
@@ -43,21 +39,6 @@ def es_colector_o_movil(user_agent_str):
         "ipad", "ipod", "blackberry", "iemobile", "opera mini", "windows phone"
     ]
     return any(k in ua for k in keywords)
-
-
-def procesar_y_guardar_foto(file_obj, upload_folder, name):
-    """Redimensiona y comprime la foto para optimizar ancho de banda y almacenamiento."""
-    target_path = os.path.join(upload_folder, name)
-    try:
-        img = Image.open(file_obj)
-        img = ImageOps.exif_transpose(img)
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-        img.thumbnail((1280, 1280), Image.Resampling.LANCZOS)
-        img.save(target_path, "JPEG", quality=82, optimize=True)
-    except Exception:
-        file_obj.seek(0)
-        file_obj.save(target_path)
 
 
 def ldap_autenticar(username, password):
@@ -173,15 +154,6 @@ def inspeccion():
                 puntos[key[6:]] = request.form.get(key)
         data["puntos"] = puntos
 
-        fotos = []
-        files = request.files.getlist("fotos")
-        for f in files:
-            if f and f.filename:
-                name = f"{uuid.uuid4().hex}.jpg"
-                procesar_y_guardar_foto(f, app.config["UPLOAD_FOLDER"], name)
-                fotos.append(name)
-        data["fotos"] = fotos
-
         db.guardar_inspeccion(data)
         return redirect(url_for("dashboard", ok=1))
     return render_template(
@@ -244,14 +216,7 @@ def borrar(inspeccion_id):
     if session.get("username") != BORRADO_AUTORIZADO:
         return jsonify({"ok": False, "error": "Acceso denegado. Solo el Administrador puede borrar inspecciones."}), 403
     
-    fotos_a_borrar = db.borrar_inspeccion(inspeccion_id)
-    for foto in fotos_a_borrar:
-        file_path = os.path.join(app.config["UPLOAD_FOLDER"], foto)
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except Exception:
-                pass
+    db.borrar_inspeccion(inspeccion_id)
     return jsonify({"ok": True})
 
 
@@ -265,7 +230,7 @@ def exportar_csv():
         writer.writerow([
             "ID", "Fecha", "Turno", "Area", "Usuario LDAP", "Nombre Operario",
             "Escritorio Limpio", "Piso Limpio", "Mueble Repuestos", "Sin Repuestos Mesón/Piso",
-            "Observaciones", "Cantidad Fotos"
+            "Observaciones"
         ])
         yield data.getvalue()
         data.seek(0)
@@ -284,8 +249,7 @@ def exportar_csv():
                 puntos.get("Piso", ""),
                 puntos.get("MuebleRepuestos", ""),
                 puntos.get("SinRepuestos", ""),
-                r.get("observaciones", ""),
-                len(r.get("fotos_list", []))
+                r.get("observaciones", "")
             ])
             yield data.getvalue()
             data.seek(0)
@@ -297,9 +261,9 @@ def exportar_csv():
     return response
 
 
-@app.route("/fotos/<path:filename>")
-def fotos(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(os.path.join(BASE_DIR, "static", "img"), "goodyear.svg", mimetype="image/svg+xml")
 
 
 if __name__ == "__main__":
